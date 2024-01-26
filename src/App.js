@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import fetch from 'node-fetch';
+import MgrProfile from './MgrProfile';
 import './App.css';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
   return (
     <div className="App">
       <h1>THE HINDSIGHT HIT</h1>
+      <MgrProfile />
       <div
         style={{
           width: '100%',
