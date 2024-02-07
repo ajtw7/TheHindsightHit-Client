@@ -2,19 +2,11 @@ import { useState, useEffect } from 'react';
 import fetch from 'node-fetch';
 import MgrProfile from './MgrProfile';
 import './App.css';
+import AllPlayers from './AllPlayers';
 
 function App() {
   // const [mgrData, setMgrData] = useState([]);
   const [fixtures, setFixtures] = useState([]);
-
-  // useEffect(() => {
-  //   fetch('http://localhost:5000/api/mgr-profile')
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       // console.log('data', data);
-  //       setMgrData(data);
-  //     });
-  // });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,6 +28,8 @@ function App() {
     <div className="App">
       <h1>THE HINDSIGHT HIT</h1>
       <MgrProfile />
+      <hr />
+      <AllPlayers />
       <div
         style={{
           width: '100%',
@@ -49,7 +43,7 @@ function App() {
         {/* <>{mgrData.id}</>
         <>{mgrData.name}</> */}
       </div>
-      <div>
+      {/* <div>
         {fixtures.map((fix) => (
           <div key={fix.id}>
             <p>Event: {fix.event}</p>
@@ -58,7 +52,7 @@ function App() {
             <br />
           </div>
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }
