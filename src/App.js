@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import MgrProfile from './MgrProfile';
 import './App.css';
 import AllPlayers from './AllPlayers';
+import GWHistory from './GWHistory';
 
 function App() {
   // const [mgrData, setMgrData] = useState([]);
@@ -29,6 +30,8 @@ function App() {
       <h1>THE HINDSIGHT HIT</h1>
       <MgrProfile />
       <hr />
+      <GWHistory />
+      <hr />
       <AllPlayers />
       <div
         style={{
@@ -39,20 +42,7 @@ function App() {
           alignItems: 'center',
           justifyContent: 'center',
         }}
-      >
-        {/* <>{mgrData.id}</>
-        <>{mgrData.name}</> */}
-      </div>
-      {/* <div>
-        {fixtures.map((fix) => (
-          <div key={fix.id}>
-            <p>Event: {fix.event}</p>
-            <p>Pulse Id: {fix.pulse_id}</p>
-            <p>Team: {fix.team_a}</p>
-            <br />
-          </div>
-        ))}
-      </div> */}
+      ></div>
     </div>
   );
 }
