@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import fetch from 'node-fetch';
-import MgrProfile from './MgrProfile';
+// import MgrProfile from './MgrProfile';
+// import AllPlayers from './AllPlayers';
+// import GWHistory from './GWHistory';
+import PlayerStats from './PlayerStats';
 import './App.css';
-import AllPlayers from './AllPlayers';
-import GWHistory from './GWHistory';
 
 function App() {
   // const [mgrData, setMgrData] = useState([]);
@@ -28,21 +29,23 @@ function App() {
   return (
     <div className="App">
       <h1>THE HINDSIGHT HIT</h1>
-      <MgrProfile />
+      {/* <MgrProfile />
       <hr />
       <GWHistory />
       <hr />
-      <AllPlayers />
+      <AllPlayers /> */}
       <div
         style={{
           width: '100%',
-          height: '10vh',
+          // height: '10vh',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
         }}
-      ></div>
+      >
+        <PlayerStats />
+      </div>
     </div>
   );
 }
