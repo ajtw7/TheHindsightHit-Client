@@ -39,4 +39,4 @@ export default function GWHistory() {
     </div>
   );
 }
-// Path: src/AllPlayers.js
+// Path: src/GWHistory.js
