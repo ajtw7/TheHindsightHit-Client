@@ -29,25 +29,17 @@ export default function AllPlayers() {
         flexWrap: 'wrap',
         width: '100%',
         height: '100vh',
-    
       }}
     >
       {allPlayers.map((player) => (
-        <div
-          key={player.id}
-          style={{ width: '20%', height: 'auto' }}
-        >
+        <div key={player.id} style={{ width: '20%', height: 'auto' }}>
           {player.team === 1 && (
             <>
-              {/* <p>Player Id: {player.id}</p> */}
-              {/* <p>Team Id: {player.team}</p> */}
-              {/* <p>Team Code: {player.team_code}</p> */}
-              {/* <p>Player Id: {player.id}</p> */}
               <p>First Name: {player.first_name}</p>
               <p>Last Name: {player.second_name}</p>
             </>
           )}
-        </div> // Add closing tag for the div element
+        </div>
       ))}
     </div>
   );
