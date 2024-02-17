@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import fetch from 'node-fetch';
-import MgrProfile from './MgrProfile';
+// import MgrProfile from './MgrProfile';
+// import AllPlayers from './AllPlayers';
+// import GWHistory from './GWHistory';
+import PlayerStats from './PlayerStats';
 import './App.css';
-import AllPlayers from './AllPlayers';
 
 function App() {
   // const [mgrData, setMgrData] = useState([]);
@@ -27,32 +29,23 @@ function App() {
   return (
     <div className="App">
       <h1>THE HINDSIGHT HIT</h1>
-      <MgrProfile />
+      {/* <MgrProfile />
       <hr />
-      <AllPlayers />
+      <GWHistory />
+      <hr />
+      <AllPlayers /> */}
       <div
         style={{
           width: '100%',
-          height: '10vh',
+          // height: '10vh',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        {/* <>{mgrData.id}</>
-        <>{mgrData.name}</> */}
+        <PlayerStats />
       </div>
-      {/* <div>
-        {fixtures.map((fix) => (
-          <div key={fix.id}>
-            <p>Event: {fix.event}</p>
-            <p>Pulse Id: {fix.pulse_id}</p>
-            <p>Team: {fix.team_a}</p>
-            <br />
-          </div>
-        ))}
-      </div> */}
     </div>
   );
 }
