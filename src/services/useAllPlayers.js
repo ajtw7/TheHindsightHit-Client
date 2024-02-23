@@ -8,7 +8,7 @@ export default function useAllPlayers() {
       try {
         const res = await fetch('http://localhost:5000/api/all-players');
         const data = await res.json();
-        setAllPlayers((prevAllPlayers) => {
+        setAllPlayers((_prevAllPlayers) => {
           return data;
         });
         console.log('these are the players', allPlayers);
@@ -21,3 +21,5 @@ export default function useAllPlayers() {
 
   return allPlayers;
 }
+
+// Path: src/services/useAllPlayers.js

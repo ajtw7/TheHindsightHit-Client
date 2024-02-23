@@ -1,33 +1,14 @@
-import useMgrData from './services/useMgrData';
-import useGWPlayerStats from './services/useGWPlayerStats';
-import usePlayerHistories from './services/usePlayerHistories';
-import useAllPlayers from './services/useAllPlayers';
-import { useMemo } from 'react';
+import { useContext } from 'react';
+import { PlayerContext } from './App';
 
-export default function MgrProfile() {
-  const mgrData = useMgrData();
-  const allPlayers = useAllPlayers();
-  const myPlayerStats = useGWPlayerStats();
-
-  const myPlayerIds = useMemo(() => {
-    return myPlayerStats ? myPlayerStats.map((player) => player.element) : [];
-  }, [myPlayerStats]);
-
-  const myPlayers = useMemo(() => {
-    return allPlayers.filter((player) => {
-      return myPlayerIds.includes(player.id);
-    });
-  }, [allPlayers, myPlayerIds]);
-
-  // Use the usePlayerHistories hook once for each player ID
-  const playerHistories = usePlayerHistories(myPlayerIds);
+export default function ManagerProfile() {
+  const { mgrData, myPlayerIds, myPlayers, playerHistories } =
+    useContext(PlayerContext);
 
   console.log('Mgr Profile Log:', {
     playerHistories,
     myPlayerIds,
-    allPlayers,
     myPlayers,
-    myPlayerStats,
   });
 
   const {
