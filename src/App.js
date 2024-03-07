@@ -1,20 +1,37 @@
-import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { BrowserRouter, Route, Link, Routes } from 'react-router-dom';
+import useAllData from './services/useAllData';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
 import useGWPlayerStats from './services/useGWPlayerStats';
 import usePlayerHistories from './services/usePlayerHistories';
+import useTransfers from './services/useTransfers';
+import useGWHistory from './services/useGWHistory';
 import ManagerProfile from './ManagerProfile';
 import GWHistory from './GWHistory';
 import Fixtures from './Fixtures';
+import Transfers from './Transfers';
+import { PlayerContext } from './services/context';
 import './styles/App.css';
 
-export const PlayerContext = React.createContext();
-
 function App() {
+  // const [currentGW, setCurrentGW] = useState(null);
+  const currentGW = useAllData();
+  console.log('currentGW', currentGW);
+  const [mgrId, setMgrId] = useState(null);
+  // have a homepage that allows managers to enter their team ID.
+  // Once entered, the app should display the manager's profile, gameweek history, fixtures, and transfers.
   const mgrData = useMgrData();
   const allPlayers = useAllPlayers();
-  const myPlayerStats = useGWPlayerStats();
+  const myPlayerStats = useGWPlayerStats(currentGW);
+  const myTransfers = useTransfers();
+  const gwHistory = useGWHistory();
+
+  useEffect(() => {
+    if (mgrData && mgrData.id) {
+      setMgrId(mgrData.id);
+    }
+  }, [mgrData]);
 
   const myPlayerIds = useMemo(() => {
     return myPlayerStats ? myPlayerStats.map((player) => player.element) : [];
@@ -31,9 +48,9 @@ function App() {
 
   return (
     <PlayerContext.Provider
-      value={{ mgrData, myPlayerIds, myPlayers, playerHistories }}
+      value={{ mgrData, myPlayerIds, myPlayers, playerHistories, myTransfers }}
     >
-      <Router>
+      <BrowserRouter>
         <div className="App">
           <h1>THE HINDSIGHT HIT</h1>
 
@@ -48,27 +65,36 @@ function App() {
               <li>
                 <Link to="/gameweek-history">GW History</Link>
               </li>
-              {/* <li>
-                <Link to="/all-players">All Players</Link>
-              </li> */}
-              <li>
-                <Link to="/player-stats">Player Stats</Link>
-              </li>
               <li>
                 <Link to="/fixtures">Fixtures</Link>
+              </li>
+              <li>
+                <Link to="/transfers">Transfers</Link>
               </li>
             </ul>
           </nav>
 
           <Routes>
             <Route path="/manager-profile" element={<ManagerProfile />} />
-            <Route path="/gameweek-history" element={<GWHistory />} />
-            {/* <Route path="/all-players" element={<useAllPlayers />} /> */}
-            <Route path="/player-stats" element={<useGWPlayerStats />} />
+            <Route
+              path="/gameweek-history"
+              element={
+                <GWHistory
+                  mgrData={mgrData}
+                  currentGW={currentGW}
+                  // setCurrentGW={setCurrentGW}
+                  myPlayers={myPlayers}
+                  playerHistories={playerHistories}
+                  myTransfers={myTransfers}
+                  gwHistory={gwHistory}
+                />
+              }
+            />
             <Route path="/fixtures" element={<Fixtures />} />
+            <Route path="/transfers" element={<Transfers />} />
           </Routes>
         </div>
-      </Router>
+      </BrowserRouter>
     </PlayerContext.Provider>
   );
 }

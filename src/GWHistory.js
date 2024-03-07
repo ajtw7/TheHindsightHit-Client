@@ -1,23 +1,34 @@
-import { useContext, useEffect, useState } from 'react';
-import useGWHistory from './services/useGWHistory';
-import { PlayerContext } from './App';
+import { useEffect, useState } from 'react';
 
-export default function GWHistory() {
-  const gwHistory = useGWHistory();
-  const { mgrData, myPlayerIds, myPlayers, playerHistories } =
-    useContext(PlayerContext);
+export default function GWHistory(props) {
+  const [uniquePlayerHistories, setUniquePlayerHistories] = useState([]);
+  const {
+    gwHistory,
+    currentGW,
+    setCurrentGW,
+    mgrData,
+    myPlayers,
+    playerHistories,
+    myTransfers,
+  } = props;
 
   //  Rename current_event to currentEvent
   const { current_event: currentEvent } = mgrData;
 
   // Use currentEvent as the default value for currentGW
-  const [currentGW, setCurrentGW] = useState(currentEvent);
-  const [uniquePlayerHistories, setUniquePlayerHistories] = useState([]);
 
   // ensure the current gameweek is always see
   useEffect(() => {
     setCurrentGW(currentEvent);
-  }, [currentEvent]);
+  }, [setCurrentGW, currentEvent]);
+
+  // filter the transfers by the current gameweek
+  function filterTransfersByGW(transfers, currentGW) {
+    return transfers.filter((transfer) => transfer.event === currentGW);
+  }
+
+  // get the transfers for the current gameweek
+  const myGWTransfers = filterTransfersByGW(myTransfers, currentGW);
 
   // ensures player GW histories are unique on mount and when playerHistories changes
   useEffect(() => {
@@ -38,11 +49,7 @@ export default function GWHistory() {
 
   // console log all deconstructed variables
   console.log('GWHistory Log:', {
-    playerHistories,
-    myPlayerIds,
-    myPlayers,
-    mgrData,
-    gwHistory,
+    myGWTransfers,
   });
 
   return (
@@ -119,6 +126,47 @@ export default function GWHistory() {
               );
             })
         )}
+        <div>
+          <h1>Transfers</h1>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignContent: 'center',
+              width: '100%',
+              height: 'auto',
+              margin: 'auto',
+              backgroundColor: 'lightgray',
+            }}
+          >
+            {myGWTransfers
+              .filter((transfer) => transfer.event === currentGW)
+              .map((transfer, index) => {
+                const playerIn = myPlayers.find(
+                  (player) => player.id === transfer.element_in
+                );
+
+                const playerOut = myPlayers.find(
+                  (player) => player.id === transfer.element_out
+                );
+                console.log('players & transfers', {
+                  myPlayers,
+                  myGWTransfers,
+                });
+                return (
+                  <div key={index} style={{ padding: 10 }}>
+                    <p>Player In: {playerIn ? playerIn.web_name : 'Unknown'}</p>
+                    <p>
+                      Player Out: {playerOut ? playerOut.web_name : 'Unknown'}
+                    </p>
+                    <p>GW: {transfer.event}</p>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
       </div>
     </div>
   );
