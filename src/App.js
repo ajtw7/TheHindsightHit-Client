@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { BrowserRouter, Route, Link, Routes } from 'react-router-dom';
-import useAllData from './services/useAllData';
+import useGameweeks from './services/useGameweeks';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
 import useGWPlayerStats from './services/useGWPlayerStats';
@@ -15,27 +15,40 @@ import { PlayerContext } from './services/context';
 import './styles/App.css';
 
 function App() {
-  // const [currentGW, setCurrentGW] = useState(null);
-  const currentGW = useAllData();
-  console.log('currentGW', currentGW);
+  const { gameweeks } = useGameweeks();
+  const [currentGW, setCurrentGW] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [mgrId, setMgrId] = useState(null);
-  // have a homepage that allows managers to enter their team ID.
-  // Once entered, the app should display the manager's profile, gameweek history, fixtures, and transfers.
+
   const mgrData = useMgrData();
   const allPlayers = useAllPlayers();
-  const myPlayerStats = useGWPlayerStats(currentGW);
+  const { gwPlayerStats, loading: gwPlayerStatsLoading } =
+    useGWPlayerStats(currentGW);
   const myTransfers = useTransfers();
   const gwHistory = useGWHistory();
 
   useEffect(() => {
-    if (mgrData && mgrData.id) {
+    if (gameweeks.length > 0) {
+      const currentGW = gameweeks.find((gw) => gw.is_current);
+      const currentGWNumber = currentGW.id;
+      setCurrentGW(currentGWNumber);
+      setLoading(false);
+      console.log('currentGW', { currentGW });
+    }
+  }, [gameweeks]);
+
+  useEffect(() => {
+    if (currentGW && mgrData && mgrData.id) {
       setMgrId(mgrData.id);
     }
-  }, [mgrData]);
+  }, [currentGW, mgrData]);
+
+  // have a homepage that allows managers to enter their team ID.
+  // Once entered, the app should display the manager's profile, gameweek history, fixtures, and transfers.
 
   const myPlayerIds = useMemo(() => {
-    return myPlayerStats ? myPlayerStats.map((player) => player.element) : [];
-  }, [myPlayerStats]);
+    return gwPlayerStats ? gwPlayerStats.map((player) => player.element) : [];
+  }, [gwPlayerStats]);
 
   const myPlayers = useMemo(() => {
     return allPlayers.filter((player) => {
@@ -46,9 +59,22 @@ function App() {
   // Use the usePlayerHistories hook once for each player ID
   const playerHistories = usePlayerHistories(myPlayerIds);
 
+  if (loading) {
+    return <div>Loading something awesome... 😬</div>;
+  }
+
+  if (gwPlayerStatsLoading) {
+    return <div>Loading player stats... 😬</div>;
+  }
+
   return (
     <PlayerContext.Provider
-      value={{ mgrData, myPlayerIds, myPlayers, playerHistories, myTransfers }}
+      value={{
+        currentGW,
+        mgrData,
+        myPlayerIds,
+        myTransfers,
+      }}
     >
       <BrowserRouter>
         <div className="App">
@@ -75,18 +101,17 @@ function App() {
           </nav>
 
           <Routes>
-            <Route path="/manager-profile" element={<ManagerProfile />} />
+            <Route
+              path="/manager-profile"
+              element={<ManagerProfile myPlayers={myPlayers} />}
+            />
             <Route
               path="/gameweek-history"
               element={
                 <GWHistory
-                  mgrData={mgrData}
-                  currentGW={currentGW}
-                  // setCurrentGW={setCurrentGW}
-                  myPlayers={myPlayers}
                   playerHistories={playerHistories}
-                  myTransfers={myTransfers}
                   gwHistory={gwHistory}
+                  myPlayers={myPlayers}
                 />
               }
             />
