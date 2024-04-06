@@ -1,8 +1,8 @@
 import { useContext } from 'react';
 import { PlayerContext } from './services/context';
 
-export default function ManagerProfile() {
-  const { mgrData, myPlayers } = useContext(PlayerContext);
+export default function ManagerProfile({ myPlayers }) {
+  const { mgrData } = useContext(PlayerContext);
 
   const {
     id,

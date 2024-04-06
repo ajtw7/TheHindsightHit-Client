@@ -11,7 +11,6 @@ export default function useAllPlayers() {
         setAllPlayers((_prevAllPlayers) => {
           return data;
         });
-        console.log('these are the players', allPlayers);
       } catch (error) {
         console.error('Error fetching players', error);
       }
