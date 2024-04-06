@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 
 export default function useMgrData() {
   const [mgrData, setMgrData] = useState([]);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
