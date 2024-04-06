@@ -1,37 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
+import { PlayerContext } from './services/context';
 
-export default function GWHistory(props) {
+export default function GWHistory({ gwHistory, playerHistories, myPlayers }) {
+  const { currentGW } = useContext(PlayerContext);
+
   const [uniquePlayerHistories, setUniquePlayerHistories] = useState([]);
-  const {
-    gwHistory,
-    currentGW,
-    setCurrentGW,
-    mgrData,
-    myPlayers,
-    playerHistories,
-    myTransfers,
-  } = props;
 
-  //  Rename current_event to currentEvent
-  const { current_event: currentEvent } = mgrData;
-
-  // Use currentEvent as the default value for currentGW
-
-  // ensure the current gameweek is always see
-  useEffect(() => {
-    setCurrentGW(currentEvent);
-  }, [setCurrentGW, currentEvent]);
+  const [selectedGW, setSelectedGW] = useState(currentGW);
 
   // filter the transfers by the current gameweek
-  function filterTransfersByGW(transfers, currentGW) {
-    return transfers.filter((transfer) => transfer.event === currentGW);
-  }
+  // function filterTransfersByGW(transfers, currentGW) {
+  //   return transfers.filter((transfer) => transfer.event === currentGW);
+  // }
 
   // get the transfers for the current gameweek
-  const myGWTransfers = filterTransfersByGW(myTransfers, currentGW);
+  // const myGWTransfers = filterTransfersByGW(myTransfers, currentGW);
 
   // ensures player GW histories are unique on mount and when playerHistories changes
   useEffect(() => {
+    console.log('running useEffect');
     let newUniquePH = [];
     for (let pH of playerHistories) {
       let uniqueGWData = [];
@@ -48,9 +35,15 @@ export default function GWHistory(props) {
   }, [playerHistories]);
 
   // console log all deconstructed variables
-  console.log('GWHistory Log:', {
-    myGWTransfers,
-  });
+  // console.log('GWHistory Log:', {
+  //   myGWTransfers,
+  // });
+
+  // handle the change of the gameweek dropdown
+  function handleGWChange(gw) {
+    console.log('GW Change:', gw);
+    setSelectedGW(gw);
+  }
 
   return (
     <div
@@ -68,8 +61,8 @@ export default function GWHistory(props) {
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <select
           id="gw-select"
-          value={currentGW}
-          onChange={(e) => setCurrentGW(Number(e.target.value))}
+          value={selectedGW}
+          onChange={(e) => handleGWChange(Number(e.target.value))}
         >
           {gwHistory.map((gw) => (
             <option key={gw.id} value={gw.event}>
@@ -82,7 +75,7 @@ export default function GWHistory(props) {
       {/* Filer the displayed gameweek history based on the selected gameweek */}
       <>
         {gwHistory
-          .filter((gw) => gw.event === currentGW)
+          .filter((gw) => gw.event === selectedGW)
           .map((gw) => (
             <div key={gw.event} style={{ padding: 10 }}>
               <p>GW: {gw.event}</p>
@@ -107,7 +100,7 @@ export default function GWHistory(props) {
       >
         {uniquePlayerHistories.map((playerHistory) =>
           playerHistory
-            .filter((gwData) => gwData.round === currentGW)
+            .filter((gwData) => gwData.round === selectedGW)
             .map((gwData) => {
               const player = myPlayers.find(
                 (player) => player.id === gwData.element
@@ -141,8 +134,8 @@ export default function GWHistory(props) {
               backgroundColor: 'lightgray',
             }}
           >
-            {myGWTransfers
-              .filter((transfer) => transfer.event === currentGW)
+            {/* {myGWTransfers
+              .filter((transfer) => transfer.event === selectedGW)
               .map((transfer, index) => {
                 const playerIn = myPlayers.find(
                   (player) => player.id === transfer.element_in
@@ -164,7 +157,7 @@ export default function GWHistory(props) {
                     <p>GW: {transfer.event}</p>
                   </div>
                 );
-              })}
+              })} */}
           </div>
         </div>
       </div>
