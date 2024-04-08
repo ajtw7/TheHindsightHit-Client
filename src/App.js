@@ -7,6 +7,7 @@ import useGWPlayerStats from './services/useGWPlayerStats';
 import usePlayerHistories from './services/usePlayerHistories';
 import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
+import HomePage from './HomePage';
 import ManagerProfile from './ManagerProfile';
 import GWHistory from './GWHistory';
 import Fixtures from './Fixtures';
@@ -22,12 +23,12 @@ function App() {
   const [mgrId, setMgrId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const mgrData = useMgrData();
+  const mgrData = useMgrData(mgrId);
   const allPlayers = useAllPlayers();
   const { gwPlayerStats, loading: gwPlayerStatsLoading } =
     useGWPlayerStats(selectedGW);
-  const myTransfers = useTransfers();
-  const gwHistory = useGWHistory();
+  const myTransfers = useTransfers(); // add mgrId as a parameter
+  const gwHistory = useGWHistory(); // add mgrId as a parameter
 
   useEffect(() => {
     if (gameweeks.length > 0) {
@@ -69,6 +70,12 @@ function App() {
   if (gwPlayerStatsLoading) {
     return <div>Loading player stats... 😬</div>;
   }
+
+  if (mgrId === null) {
+    return <HomePage setMgrId={setMgrId} />;
+  }
+
+  console.log('mgrInfo', { mgrId, setMgrId });
 
   return (
     <SelectedGWContext.Provider value={{ selectedGW }}>
