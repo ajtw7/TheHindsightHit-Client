@@ -12,18 +12,20 @@ import GWHistory from './GWHistory';
 import Fixtures from './Fixtures';
 import Transfers from './Transfers';
 import { PlayerContext } from './services/context';
+import { SelectedGWContext } from './services/context';
 import './styles/App.css';
 
 function App() {
   const { gameweeks } = useGameweeks();
   const [currentGW, setCurrentGW] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [selectedGW, setSelectedGW] = useState(currentGW);
   const [mgrId, setMgrId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const mgrData = useMgrData();
   const allPlayers = useAllPlayers();
   const { gwPlayerStats, loading: gwPlayerStatsLoading } =
-    useGWPlayerStats(currentGW);
+    useGWPlayerStats(selectedGW);
   const myTransfers = useTransfers();
   const gwHistory = useGWHistory();
 
@@ -32,6 +34,7 @@ function App() {
       const currentGW = gameweeks.find((gw) => gw.is_current);
       const currentGWNumber = currentGW.id;
       setCurrentGW(currentGWNumber);
+      // setSelectedGW(currentGWNumber);
       setLoading(false);
       console.log('currentGW', { currentGW });
     }
@@ -68,59 +71,62 @@ function App() {
   }
 
   return (
-    <PlayerContext.Provider
-      value={{
-        currentGW,
-        mgrData,
-        myPlayerIds,
-        myTransfers,
-      }}
-    >
-      <BrowserRouter>
-        <div className="App">
-          <h1>THE HINDSIGHT HIT</h1>
+    <SelectedGWContext.Provider value={{ selectedGW }}>
+      <PlayerContext.Provider
+        value={{
+          currentGW,
+          mgrData,
+          myPlayerIds,
+        }}
+      >
+        <BrowserRouter>
+          <div className="App">
+            <h1>THE HINDSIGHT HIT</h1>
 
-          <nav className="sticky-menu">
-            <ul>
-              <li>
-                <Link to="/">Home</Link>
-              </li>
-              <li>
-                <Link to="/manager-profile">Manager Profile</Link>
-              </li>
-              <li>
-                <Link to="/gameweek-history">GW History</Link>
-              </li>
-              <li>
-                <Link to="/fixtures">Fixtures</Link>
-              </li>
-              <li>
-                <Link to="/transfers">Transfers</Link>
-              </li>
-            </ul>
-          </nav>
+            <nav className="sticky-menu">
+              <ul>
+                <li>
+                  <Link to="/">Home</Link>
+                </li>
+                <li>
+                  <Link to="/manager-profile">Manager Profile</Link>
+                </li>
+                <li>
+                  <Link to="/gameweek-history">GW History</Link>
+                </li>
+                <li>
+                  <Link to="/fixtures">Fixtures</Link>
+                </li>
+                <li>
+                  <Link to="/transfers">Transfers</Link>
+                </li>
+              </ul>
+            </nav>
 
-          <Routes>
-            <Route
-              path="/manager-profile"
-              element={<ManagerProfile myPlayers={myPlayers} />}
-            />
-            <Route
-              path="/gameweek-history"
-              element={
-                <GWHistory
-                  playerHistories={playerHistories}
-                  gwHistory={gwHistory}
-                  myPlayers={myPlayers}
-                />
-              }
-            />
-            <Route path="/fixtures" element={<Fixtures />} />
-            <Route path="/transfers" element={<Transfers />} />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    </PlayerContext.Provider>
+            <Routes>
+              <Route
+                path="/manager-profile"
+                element={<ManagerProfile myPlayers={myPlayers} />}
+              />
+              <Route
+                path="/gameweek-history"
+                element={
+                  <GWHistory
+                    playerHistories={playerHistories}
+                    gwHistory={gwHistory}
+                    myPlayers={myPlayers}
+                    setSelectedGW={setSelectedGW}
+                    myTransfers={myTransfers}
+                  />
+                }
+              />
+              <Route path="/fixtures" element={<Fixtures />} />
+              <Route path="/transfers" element={<Transfers />} />
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </PlayerContext.Provider>
+    </SelectedGWContext.Provider>
   );
 }
 
