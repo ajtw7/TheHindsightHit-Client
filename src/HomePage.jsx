@@ -1,12 +1,16 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function HomePage({ setMgrId }) {
+  const navigate = useNavigate();
   const [inputValue, setInputValue] = useState('');
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setMgrId(inputValue);
-    console.log('setMgrId:', setMgrId);
+    setMgrId(Number(inputValue));
+    setInputValue('');
+    navigate('/manager-profile');
+    // console.log('setMgrId:', setMgrId);
   };
 
   return (
@@ -35,7 +39,7 @@ export default function HomePage({ setMgrId }) {
           <input
             type="number"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => setInputValue(Number(e.target.value))}
             placeholder="Enter team ID"
           />
           <button type="submit">Submit</button>
