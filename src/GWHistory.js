@@ -1,8 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
-import { SelectedGWContext } from './services/context';
+import { SelectedGWContext, PlayerContext } from './services/context';
 
 export default function GWHistory({
-  currentGW,
   gwHistory,
   playerHistories,
   myPlayers,
@@ -10,18 +9,19 @@ export default function GWHistory({
   myTransfers,
 }) {
   const { selectedGW } = useContext(SelectedGWContext);
+  const { allPlayers } = useContext(PlayerContext);
+  console.log('transfers/ players:', { myTransfers, myPlayers });
 
-  const [currentTeam, setCurrentTeam] = useState([]);
+  // const [currentTeam, setCurrentTeam] = useState([]);
   const [uniquePlayerHistories, setUniquePlayerHistories] = useState([]);
   const [gwHistories, setGWHistories] = useState({});
 
-  // filter the transfers by the current gameweek
-  function filterTransfersByGW(transfers, currentGW) {
-    return transfers.filter((transfer) => transfer.event === currentGW);
-  }
+  // // filter the transfers by the current gameweek
+  const selectedGWTransfers = myTransfers.filter(
+    (transfer) => transfer.event === selectedGW
+  );
 
-  // get the transfers for the current gameweek
-  const myGWTransfers = filterTransfersByGW(myTransfers, currentGW);
+  console.log('selectedGWTransfers:', selectedGWTransfers);
 
   // ensures player GW histories are unique on mount and when playerHistories changes
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function GWHistory({
     console.log('GW Change:', gw);
     setSelectedGW(gw);
   }
-  console.log('myGWTransfers:', myGWTransfers);
+  // console.log('myGWTransfers:', myGWTransfers);
   console.log('selectedGW:', selectedGW);
   return (
     <div
@@ -143,7 +143,27 @@ export default function GWHistory({
               margin: 'auto',
               backgroundColor: 'lightgray',
             }}
-          ></div>
+          >
+            {selectedGWTransfers.map((transfer) => {
+              const playerIn = myPlayers.find(
+                (player) => player.id === transfer.element_in
+              );
+              const playerOut = allPlayers.find(
+                (player) => player.id === transfer.element_out
+              );
+              return (
+                <div
+                  key={`${transfer.entry}-${transfer.event}-${transfer.time}`}
+                  style={{ padding: 10 }}
+                >
+                  <p>In: {playerIn ? playerIn.web_name : 'Unknown Player'}</p>
+                  <p>
+                    Out: {playerOut ? playerOut.web_name : 'Unknown Player'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
