@@ -19,12 +19,21 @@ export default function Transfers(myTransfers) {
     element_out: playerLookup[transfer.element_out],
   }));
 
+  // const findAlternatives(player, allPlayers) => {
+  //   return allPlayers.filter(
+  //     altPlayer => altPlayer
+  //   )
+
   return (
     <div style={{ height: 'auto', width: '100%' }}>
       <h1>Transfers</h1>
       <DataGrid
         rows={namedTransfers}
         columns={transferColumnDef}
+        columnVisibilityModel={{
+          time: false,
+          entry: false,
+        }}
         pageSize={5}
         getRowId={(row) => `${row.entry}-${row.event}-${row.time}`}
       />
