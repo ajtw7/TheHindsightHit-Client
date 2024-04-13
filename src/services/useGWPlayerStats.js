@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function useGWPlayerStats(selectedGW) {
+export default function useGWPlayerStats(selectedGW, mgrId) {
   const [gwPlayerStats, setGWPlayerStats] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -9,7 +9,7 @@ export default function useGWPlayerStats(selectedGW) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5000/api/gw-player-stats/${selectedGW}`
+          `http://localhost:5000/api/${mgrId}/gw-player-stats/${selectedGW}`
         );
         const data = await res.json();
         setGWPlayerStats(data);
@@ -20,10 +20,10 @@ export default function useGWPlayerStats(selectedGW) {
       }
     };
 
-    if (selectedGW) {
+    if (selectedGW && mgrId) {
       fetchData();
     }
-  }, [selectedGW]);
+  }, [selectedGW, mgrId]);
 
   return { gwPlayerStats, loading };
 }
