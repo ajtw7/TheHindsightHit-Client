@@ -11,7 +11,7 @@ import HomePage from './HomePage';
 import ManagerProfile from './ManagerProfile';
 import GWHistory from './GWHistory';
 import Fixtures from './Fixtures';
-// import Transfers from './Transfers';
+import Transfers from './Transfers';
 import { PlayerContext } from './services/context';
 import { SelectedGWContext } from './services/context';
 import './styles/App.css';
@@ -29,7 +29,7 @@ function App() {
     selectedGW,
     mgrId
   );
-  const { myTransfers, loading: transfersLoading } = useTransfers(mgrId); // add mgrId as a parameter
+  const { myTransfers } = useTransfers(mgrId); // add mgrId as a parameter
   const { gwHistory, gwHistoryLoading } = useGWHistory(mgrId); // add mgrId as a parameter
 
   useEffect(() => {
@@ -43,16 +43,6 @@ function App() {
       }
     }
   }, [gameweeks]);
-
-
-  // useEffect(() => {
-  //   if (currentGW && mgrData && mgrData.id !== mgrId) {
-  //     setMgrId(mgrData.id);
-  //   }
-  // }, [currentGW, mgrData, mgrId, setMgrId]);
-
-  // have a homepage that allows managers to enter their team ID.
-  // Once entered, the app should display the manager's profile, gameweek history, fixtures, and transfers.
 
   const myPlayerIds = useMemo(() => {
     return gwPlayerStats ? gwPlayerStats.map((player) => player.element) : [];
@@ -127,7 +117,10 @@ function App() {
               }
             />
             <Route path="/fixtures" element={<Fixtures />} />
-            {/* <Route path="/transfers" element={<Transfers />} /> */}
+            <Route
+              path="/transfers"
+              element={<Transfers myTransfers={myTransfers} />}
+            />
           </Routes>
         </div>
       </PlayerContext.Provider>
