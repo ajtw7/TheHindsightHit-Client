@@ -17,7 +17,7 @@ export default function useGWPlayerStats() {
       }
     };
     fetchData();
-  }, []);
+  }, [fixtures]);
   return fixtures;
 }
 // Path: src/services/useFixtures.js
