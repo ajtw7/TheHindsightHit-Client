@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 
 export default function useMgrData(mgrId) {
   const [mgrData, setMgrData] = useState([]);
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const res = await fetch(
           `http://localhost:5000/api/mgr-profile/${mgrId}`
@@ -14,6 +16,8 @@ export default function useMgrData(mgrId) {
         });
       } catch (error) {
         console.error('Error fetching manager data', error);
+      } finally {
+        setLoading(false);
       }
     };
     if (mgrId) {
@@ -21,5 +25,5 @@ export default function useMgrData(mgrId) {
     }
   }, [mgrId]);
 
-  return mgrData;
+  return { mgrData, loading };
 }
