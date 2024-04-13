@@ -1,25 +1,32 @@
 import { useEffect, useState } from 'react';
 
-export default function useGWHistory() {
+export default function useGWHistory(mgrId) {
   const [gwHistory, setGWHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('http://localhost:5000/api/gw-history');
+        const res = await fetch(
+          `http://localhost:5000/api/gw-history/${mgrId}`
+        );
         const data = await res.json();
         setGWHistory((_prevGWHistory) => {
           return data;
         });
-        console.log('these are the gw history', gwHistory);
       } catch (error) {
         console.error('Error fetching gw history', error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    if (mgrId) {
+      fetchData();
+    }
+  }, [mgrId]);
 
-  return gwHistory;
+  return { gwHistory, loading };
 }
 
 // Path: src/services/useGWHistory.js
