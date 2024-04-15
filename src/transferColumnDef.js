@@ -57,4 +57,27 @@ export const transferColumnDef = [
     align: 'center',
     headerAlign: 'center',
   },
+  {
+    field: 'alternatives',
+    headerName: 'Alternatives',
+    width: 150,
+    flex: 1,
+    align: 'center',
+    headerAlign: 'center',
+    valueGetter: (params) => {
+      // console.log('pv', params.value || []);
+      return (params.value || []).map((player) => player.element).join(', ');
+    },
+    renderCell: (params) => (
+      <button
+        href="#"
+        onClick={(e) => {
+          e.preventDefault(); // Prevent the link from navigating
+          console.log('Alternatives:', params.row.alternatives);
+        }}
+      >
+        Show Alternatives
+      </button>
+    ),
+  },
 ];

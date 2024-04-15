@@ -1,19 +1,11 @@
 import { useEffect, useState, useContext } from 'react';
 import { SelectedGWContext, PlayerContext } from './services/context';
+import usePlayerHistories from './services/usePlayerHistories';
 import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
 
-export default function GWHistory({
-  gwHistory,
-  playerHistories,
-  myPlayers,
-  setSelectedGW,
-  myTransfers,
-}) {
+export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTransfers }) {
   const { selectedGW } = useContext(SelectedGWContext);
-  const { allPlayers } = useContext(PlayerContext);
-  const [uniquePlayerHistories, setUniquePlayerHistories] =
-    useManageUniquePlayerHistories(playerHistories);
-  console.log('transfers/ players:', { myTransfers, myPlayers });
+  const { allPlayers, myPlayerIds } = useContext(PlayerContext);
 
   // const [currentTeam, setCurrentTeam] = useState([]);
   const [gwHistories, setGWHistories] = useState({});
@@ -22,35 +14,23 @@ export default function GWHistory({
   const selectedGWTransfers = myTransfers.filter(
     (transfer) => transfer.event === selectedGW
   );
-
-  console.log('uniquePlayerHist', uniquePlayerHistories);
+  const playerHistories = usePlayerHistories(myPlayerIds);
+  const [uniquePlayerHistories] =
+    useManageUniquePlayerHistories(playerHistories);
 
   // ensures player GW histories are unique on mount and when playerHistories changes
   useEffect(() => {
-    // console.log('running useEffect');
-    let newUniquePH = [];
-    for (let pH of playerHistories) {
-      let uniqueGWData = [];
-      let seenRounds = new Set();
-      for (let gwData of pH) {
-        if (!seenRounds.has(gwData.round)) {
-          seenRounds.add(gwData.round);
-          uniqueGWData.push(gwData);
-        }
-      }
-      newUniquePH.push(uniqueGWData);
-    }
-    setUniquePlayerHistories(newUniquePH);
-    setGWHistories((prev) => ({ ...prev, [selectedGW]: newUniquePH }));
-  }, [playerHistories, setUniquePlayerHistories, selectedGW]);
+    setGWHistories((prev) => ({
+      ...prev,
+      [selectedGW]: uniquePlayerHistories,
+    }));
+  }, [uniquePlayerHistories, selectedGW]);
 
   // handle the change of the gameweek dropdown
   function handleGWChange(gw) {
     console.log('GW Change:', gw);
     setSelectedGW(gw);
   }
-  // console.log('myGWTransfers:', myGWTransfers);
-  console.log('selectedGW:', selectedGW);
   return (
     <div
       style={{
