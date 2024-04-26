@@ -6,7 +6,7 @@ export default function useGWPlayerStats() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/fixtures');
+        const res = await fetch('http://3.147.48.156:5000/api/fixtures');
         const data = await res.json();
         setFixtures((_prevFixtures) => {
           return data;

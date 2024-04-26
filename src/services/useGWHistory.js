@@ -9,7 +9,7 @@ export default function useGWHistory(mgrId) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5000/api/gw-history/${mgrId}`
+          `http://3.147.48.156:5000/api/gw-history/${mgrId}`
         );
         const data = await res.json();
         setGWHistory((_prevGWHistory) => {

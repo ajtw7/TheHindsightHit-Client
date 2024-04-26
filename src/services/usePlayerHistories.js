@@ -17,7 +17,7 @@ export default function usePlayerHistories(elementIds) {
         while (queue.length > 0) {
           const promises = queue.splice(0, limit).map(async (id) => {
             const res = await fetch(
-              `http://localhost:5000/api/player-history/${id}`
+              `http://3.147.48.156:5000/api/player-history/${id}`
             );
             const data = await res.json();
             return data;

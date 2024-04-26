@@ -8,7 +8,7 @@ export default function useTransfers(mgrId) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/transfers/${mgrId}`);
+        const res = await fetch(`http://3.147.48.156:5000/api/transfers/${mgrId}`);
         const data = await res.json();
         setMyTransfers((_prevTransfers) => {
           return data;
