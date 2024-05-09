@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function usePlayerHistories(elementIds) {
   const [playerHistories, setPlayerHistories] = useState([]);
+  const cache = useRef({});
 
   useEffect(() => {
     if (elementIds.length === 0) {
@@ -16,10 +17,14 @@ export default function usePlayerHistories(elementIds) {
 
         while (queue.length > 0) {
           const promises = queue.splice(0, limit).map(async (id) => {
+            if (cache.current[id]) {
+              return cache.current[id];
+            }
             const res = await fetch(
               `http://3.147.48.156:5000/api/player-history/${id}`
             );
             const data = await res.json();
+            cache.current[id] = data;
             return data;
           });
           results.push(...(await Promise.all(promises)));
