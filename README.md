@@ -1,7 +1,3 @@
-# Project Name
-
-## Introduction
-
 # The Hindsight Hit
 
 ## Project Description
