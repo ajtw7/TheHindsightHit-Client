@@ -1,70 +1,92 @@
-# Getting Started with Create React App
+# Project Name
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Introduction
 
-## Available Scripts
+# The Hindsight Hit
 
-In the project directory, you can run:
+## Project Description
 
-### `npm start`
+The Hindsight Hit is a web application built with React that provides a comprehensive platform for Fantasy Premier League (FPL) managers. It leverages several custom hooks to fetch and manage data related to the game, such as gameweeks, player statistics, manager data, and more.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The application allows users to:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- View a list of all players and their statistics.
+- View a manager's profile with detailed information.
+- View the history of each gameweek.
+- View upcoming fixtures.
+- Track transfers between players and view alternatives.
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Please note that this project is still under development, and some features might not be fully functional yet.
 
-### `npm run build`
+<!-- ## Components
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Component 1
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Description of what this component does and its role in the project.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+#### Dependencies
 
-### `npm run eject`
+List of any external dependencies or services required for this component.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+#### Configuration
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Explanation of any configuration settings or parameters relevant to this component.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+#### Usage
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Instructions on how to use and interact with this component.
 
-## Learn More
+### Component 2
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Description of what this component does and its role in the project.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+#### Dependencies
 
-### Code Splitting
+List of any external dependencies or services required for this component.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+#### Configuration
 
-### Analyzing the Bundle Size
+Explanation of any configuration settings or parameters relevant to this component.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+#### Usage
 
-### Making a Progressive Web App
+Instructions on how to use and interact with this component.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### ...
 
-### Advanced Configuration
+## Backend Infrastructure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Description of the overall backend infrastructure architecture.
+
+### Server
+
+Explanation of the server setup, including the hosting provider, server configuration, and any server-side technologies used.
+
+### Database
+
+Description of the database architecture, including the type of database used, schema, and data storage approach.
+
+### APIs
+
+Explanation of any APIs implemented, including endpoints, request/response formats, and authentication mechanisms.
+
+### Services
+
+Overview of any backend services utilized, such as authentication services, caching services, etc.
 
 ### Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Details about how the backend infrastructure is deployed, including deployment pipelines, continuous integration/continuous deployment (CI/CD) practices, and deployment environments.
 
-### `npm run build` fails to minify
+## Diagrams
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Include any relevant diagrams illustrating the architecture, such as:
+
+- System architecture diagram
+- Data flow diagram
+- Deployment diagram
+
+## Conclusion
+
+Final thoughts and summary of the backend infrastructure and components. -->
