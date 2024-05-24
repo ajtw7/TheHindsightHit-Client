@@ -8,14 +8,14 @@ import { useManageUniquePlayerHistories } from './services/useManageUniquePlayer
 
 export default function Transfers(myTransfers) {
   const [isLoading, setIsLoading] = useState(true);
+  const [enhancedTransfers, setEnhancedTransfers] = useState([]);
   const { allPlayers } = useContext(PlayerContext);
-  const myTransfersArray = Object.values(myTransfers);
-  const [transfers] = myTransfersArray;
   const allPlayerIds = allPlayers.map((player) => player.id);
   const allPlayerHistories = usePlayerHistories(allPlayerIds);
+  const myTransfersArray = Object.values(myTransfers);
+  const [transfers] = myTransfersArray;
   const [uniquePlayerHistories] =
     useManageUniquePlayerHistories(allPlayerHistories);
-  const [enhancedTransfers, setEnhancedTransfers] = useState([]);
 
   useEffect(() => {
     const playerLookup = allPlayers.reduce((lookup, player) => {
@@ -23,15 +23,11 @@ export default function Transfers(myTransfers) {
       return lookup;
     }, {});
 
-    // console.log('apl', allPlayerHistories);
-
     const findAlternatives = (transfer, gameweek) => {
       console.log('alt trans & gw', { transfer, gameweek });
       const playerInHistory = uniquePlayerHistories.find(
         (playerHistory) => playerHistory[0].element === transfer.element_in
       );
-
-      // console.log('playerInHistory', playerInHistory);
 
       if (!playerInHistory) {
         console.error('Player not found in history', transfer.element_in);
@@ -43,12 +39,10 @@ export default function Transfers(myTransfers) {
       );
 
       const playerInTotalPoints = playerInGWHistory.total_points;
-      // console.log('playerInTotalPoints', playerInTotalPoints);
 
       return uniquePlayerHistories.flatMap((playerHistories) => {
         const filteredByRound = playerHistories.filter((history) => {
           const isSameRound = history.round === gameweek;
-          // console.log('Is same round:', isSameRound, 'History:', history);
           return isSameRound;
         });
 
@@ -56,10 +50,8 @@ export default function Transfers(myTransfers) {
           const isBetterPlayer =
             history.total_points > playerInTotalPoints &&
             history.value <= transfer.element_in_cost;
-          // console.log('Is better player:', isBetterPlayer, 'History:', history);
           return isBetterPlayer;
         });
-        // console.log('filteredByPointsAndPrice', filteredByPointsAndPrice);
         return filteredByPointsAndPrice;
       });
     };
@@ -76,8 +68,6 @@ export default function Transfers(myTransfers) {
     setEnhancedTransfers(newEnhancedTransfers);
     setIsLoading(false);
   }, [transfers, allPlayers, uniquePlayerHistories, allPlayerHistories]);
-
-  console.log('enhancedransfers', enhancedTransfers);
 
   return (
     <div style={{ height: 'auto', width: '100%' }}>

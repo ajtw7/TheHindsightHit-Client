@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import useGameweeks from './services/useGameweeks';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
@@ -7,6 +7,7 @@ import useGWPlayerStats from './services/useGWPlayerStats';
 import usePlayerHistories from './services/usePlayerHistories';
 import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
+import Nav from './Components/Nav';
 import HomePage from './HomePage';
 import ManagerProfile from './ManagerProfile';
 import GWHistory from './GWHistory';
@@ -29,8 +30,8 @@ function App() {
     selectedGW,
     mgrId
   );
-  const { myTransfers } = useTransfers(mgrId); // add mgrId as a parameter
-  const { gwHistory, gwHistoryLoading } = useGWHistory(mgrId); // add mgrId as a parameter
+  const { myTransfers } = useTransfers(mgrId);
+  const { gwHistory, gwHistoryLoading } = useGWHistory(mgrId);
 
   useEffect(() => {
     if (gameweeks.length > 0) {
@@ -55,7 +56,7 @@ function App() {
   }, [allPlayers, myPlayerIds]);
 
   // Use the usePlayerHistories hook once for each player ID
-  const playerHistories = usePlayerHistories(myPlayerIds);
+  // const playerHistories = usePlayerHistories(myPlayerIds);
 
   if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
     return <div>Loading something awesome... 😬</div>;
@@ -76,28 +77,7 @@ function App() {
         }}
       >
         <div className="App">
-          <h1>THE HINDSIGHT HIT</h1>
-
-          <nav className="sticky-menu">
-            <ul>
-              <li>
-                <Link to="/">Home</Link>
-              </li>
-              <li>
-                <Link to="/manager-profile">Manager Profile</Link>
-              </li>
-              <li>
-                <Link to="/gameweek-history">GW History</Link>
-              </li>
-              <li>
-                <Link to="/fixtures">Fixtures</Link>
-              </li>
-              <li>
-                <Link to="/transfers">Transfers</Link>
-              </li>
-            </ul>
-          </nav>
-
+          <Nav />
           <Routes>
             <Route path="/" element={<HomePage setMgrId={setMgrId} />} />
             <Route
@@ -108,7 +88,6 @@ function App() {
               path="/gameweek-history"
               element={
                 <GWHistory
-                  playerHistories={playerHistories}
                   gwHistory={gwHistory}
                   myPlayers={myPlayers}
                   setSelectedGW={setSelectedGW}
