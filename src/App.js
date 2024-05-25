@@ -7,7 +7,7 @@ import useGWPlayerStats from './services/useGWPlayerStats';
 import usePlayerHistories from './services/usePlayerHistories';
 import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
-import Nav from './Components/Nav';
+import Header from './Components/Header';
 import HomePage from './HomePage';
 import ManagerProfile from './ManagerProfile';
 import GWHistory from './GWHistory';
@@ -77,7 +77,7 @@ function App() {
         }}
       >
         <div className="App">
-          <Nav />
+          <Header />
           <Routes>
             <Route path="/" element={<HomePage setMgrId={setMgrId} />} />
             <Route
