@@ -4,7 +4,6 @@ import useGameweeks from './services/useGameweeks';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
 import useGWPlayerStats from './services/useGWPlayerStats';
-import usePlayerHistories from './services/usePlayerHistories';
 import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
 import Header from './Components/Header';
