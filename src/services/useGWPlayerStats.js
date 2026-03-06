@@ -9,7 +9,7 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://3.147.48.156:5000/api/${mgrId}/gw-player-stats/${selectedGW}`
+          `${process.env.REACT_APP_API_URL}/api/${mgrId}/gw-player-stats/${selectedGW}`
         );
         const data = await res.json();
         setGWPlayerStats(data);
