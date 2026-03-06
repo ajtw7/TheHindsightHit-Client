@@ -7,7 +7,7 @@ export default function useGameweeks() {
   useEffect(() => {
     const fetchGameweekData = async () => {
       try {
-        const res = await fetch('http://3.147.48.156:5000/api/gameweeks');
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/gameweeks`);
         const data = await res.json();
         setGameweeks(data);
         setLoading(false);

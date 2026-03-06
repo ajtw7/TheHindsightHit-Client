@@ -21,7 +21,7 @@ export default function usePlayerHistories(elementIds) {
               return cache.current[id];
             }
             const res = await fetch(
-              `http://3.147.48.156:5000/api/player-history/${id}`
+              `${process.env.REACT_APP_API_URL}/api/player-history/${id}`
             );
             const data = await res.json();
             cache.current[id] = data;
