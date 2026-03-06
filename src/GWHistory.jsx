@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from 'react';
+import { useContext } from 'react';
 import { SelectedGWContext, PlayerContext } from './services/context';
 import usePlayerHistories from './services/usePlayerHistories';
 import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
@@ -8,8 +8,6 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
   const { allPlayers, myPlayerIds } = useContext(PlayerContext);
 
   // const [currentTeam, setCurrentTeam] = useState([]);
-  const [gwHistories, setGWHistories] = useState({});
-
   // // filter the transfers by the current gameweek
   const selectedGWTransfers = myTransfers.filter(
     (transfer) => transfer.event === selectedGW
@@ -17,14 +15,6 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
   const playerHistories = usePlayerHistories(myPlayerIds);
   const [uniquePlayerHistories] =
     useManageUniquePlayerHistories(playerHistories);
-
-  // ensures player GW histories are unique on mount and when playerHistories changes
-  useEffect(() => {
-    setGWHistories((prev) => ({
-      ...prev,
-      [selectedGW]: uniquePlayerHistories,
-    }));
-  }, [uniquePlayerHistories, selectedGW]);
 
   // handle the change of the gameweek dropdown
   function handleGWChange(gw) {

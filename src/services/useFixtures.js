@@ -8,10 +8,8 @@ export default function useGWPlayerStats() {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/fixtures`);
         const data = await res.json();
-        setFixtures((_prevFixtures) => {
-          return data;
-        });
-        console.log('these are the fixtures', fixtures);
+        setFixtures(data);
+        console.log('these are the fixtures', data);
       } catch (error) {
         console.error('Error fetching fixtures', error);
       }
