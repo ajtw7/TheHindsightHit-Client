@@ -1,18 +1,19 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { SelectedGWContext, PlayerContext } from './services/context';
-import usePlayerHistories from './services/usePlayerHistories';
-import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
 
 export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTransfers }) {
   const { selectedGW } = useContext(SelectedGWContext);
-  const { allPlayers, myPlayerIds } = useContext(PlayerContext);
+  const { allPlayers, myPlayerIds, uniquePlayerHistories } = useContext(PlayerContext);
 
   const selectedGWTransfers = myTransfers.filter(
     (transfer) => transfer.event === selectedGW
   );
-  const playerHistories = usePlayerHistories(myPlayerIds);
-  const [uniquePlayerHistories] =
-    useManageUniquePlayerHistories(playerHistories);
+
+  // Filter the shared pool down to only this manager's players — no extra fetches
+  const myUniquePlayerHistories = useMemo(
+    () => uniquePlayerHistories.filter((ph) => ph[0] && myPlayerIds.includes(ph[0].element)),
+    [uniquePlayerHistories, myPlayerIds]
+  );
 
   // handle the change of the gameweek dropdown
   function handleGWChange(gw) {
@@ -72,7 +73,7 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
             margin: 'auto',
           }}
         >
-          {uniquePlayerHistories.map((playerHistory) =>
+          {myUniquePlayerHistories.map((playerHistory) =>
             playerHistory
               .filter((gwData) => gwData.round === selectedGW)
               .map((gwData) => {

@@ -1,89 +1,97 @@
-import { useEffect, useState } from 'react';
-import { useContext } from 'react';
+import { useEffect, useState, useContext, useMemo } from 'react';
 import { PlayerContext } from './services/context';
 import { DataGrid } from '@mui/x-data-grid';
 import { transferColumnDef } from './transferColumnDef';
-import usePlayerHistories from './services/usePlayerHistories';
-import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
+import { findAlternatives } from './utils/findAlternatives';
 
-export default function Transfers(myTransfers) {
-  const [isLoading, setIsLoading] = useState(true);
+export default function Transfers({ myTransfers }) {
   const [enhancedTransfers, setEnhancedTransfers] = useState([]);
-  const { allPlayers } = useContext(PlayerContext);
-  const allPlayerIds = allPlayers.map((player) => player.id);
-  const allPlayerHistories = usePlayerHistories(allPlayerIds);
-  const myTransfersArray = Object.values(myTransfers);
-  const [transfers] = myTransfersArray;
-  const [uniquePlayerHistories] =
-    useManageUniquePlayerHistories(allPlayerHistories);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const { allPlayers, uniquePlayerHistories } = useContext(PlayerContext);
+
+  const playerLookup = useMemo(
+    () => allPlayers.reduce((acc, p) => { acc[p.id] = p; return acc; }, {}),
+    [allPlayers]
+  );
 
   useEffect(() => {
-    const playerLookup = allPlayers.reduce((lookup, player) => {
-      lookup[player.id] = player.web_name;
-      return lookup;
-    }, {});
+    if (!myTransfers.length || !uniquePlayerHistories.length) return;
 
-    const findAlternatives = (transfer, gameweek) => {
-      const playerInHistory = uniquePlayerHistories.find(
-        (playerHistory) => playerHistory[0].element === transfer.element_in
-      );
-
-      if (!playerInHistory) {
-        console.error('Player not found in history', transfer.element_in);
-        return [];
-      }
-
-      const playerInGWHistory = playerInHistory.find(
-        (history) => history.round === gameweek
-      );
-
-      const playerInTotalPoints = playerInGWHistory?.total_points ?? null;
-
-      return uniquePlayerHistories.flatMap((playerHistories) => {
-        const filteredByRound = playerHistories.filter((history) => {
-          const isSameRound = history.round === gameweek;
-          return isSameRound;
-        });
-
-        const filteredByPointsAndPrice = filteredByRound.filter((history) => {
-          const isBetterPlayer =
-            history.total_points > playerInTotalPoints &&
-            history.value <= transfer.element_in_cost;
-          return isBetterPlayer;
-        });
-        return filteredByPointsAndPrice;
-      });
-    };
-
-    const newEnhancedTransfers = transfers.map((transfer) => {
-      const alternatives = findAlternatives(transfer, transfer.event);
-      return {
+    setEnhancedTransfers(
+      myTransfers.map((transfer) => ({
         ...transfer,
-        element_in: playerLookup[transfer.element_in],
-        element_out: playerLookup[transfer.element_out],
-        alternatives,
-      };
-    });
-    setEnhancedTransfers(newEnhancedTransfers);
-    setIsLoading(false);
-  }, [transfers, allPlayers, uniquePlayerHistories, allPlayerHistories]);
+        element_in: playerLookup[transfer.element_in]?.web_name ?? transfer.element_in,
+        element_out: playerLookup[transfer.element_out]?.web_name ?? transfer.element_out,
+        alternatives: findAlternatives(transfer, transfer.event, uniquePlayerHistories),
+      }))
+    );
+  }, [myTransfers, uniquePlayerHistories, playerLookup]);
+
+  const columns = useMemo(() => transferColumnDef(setSelectedRow), []);
 
   return (
     <div style={{ height: 'auto', width: '100%' }}>
       <h1>Transfers</h1>
-      {isLoading ? (
-        <h1>Loading...</h1>
-      ) : (
-        <DataGrid
-          rows={enhancedTransfers}
-          columns={transferColumnDef}
-          columnVisibilityModel={{
-            time: false,
-            entry: false,
+      <DataGrid
+        rows={enhancedTransfers}
+        columns={columns}
+        columnVisibilityModel={{ time: false, entry: false }}
+        initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
+        getRowId={(row) => `${row.entry}-${row.event}-${row.time}`}
+      />
+
+      {selectedRow && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
           }}
-          initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
-          getRowId={(row) => `${row.entry}-${row.event}-${row.time}`}
-        />
+          onClick={() => setSelectedRow(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: 8,
+              padding: 24,
+              maxWidth: 500,
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2>Alternatives for GW{selectedRow.event}</h2>
+            <p>
+              You transferred in: <strong>{selectedRow.element_in}</strong>
+            </p>
+            {selectedRow.alternatives.length === 0 ? (
+              <p>No better alternatives available within budget.</p>
+            ) : (
+              <ul style={{ paddingLeft: 20 }}>
+                {selectedRow.alternatives.map((alt) => (
+                  <li key={alt.element}>
+                    {playerLookup[alt.element]?.web_name ?? `Player ${alt.element}`}
+                    {' — '}
+                    {alt.total_points} pts @ £{(alt.value / 10).toFixed(1)}m
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              style={{ marginTop: 16 }}
+              onClick={() => setSelectedRow(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
