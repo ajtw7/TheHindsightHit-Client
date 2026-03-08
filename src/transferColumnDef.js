@@ -65,15 +65,12 @@ export const transferColumnDef = [
     align: 'center',
     headerAlign: 'center',
     valueGetter: (params) => {
-      // console.log('pv', params.value || []);
       return (params.value || []).map((player) => player.element).join(', ');
     },
     renderCell: (params) => (
       <button
-        href="#"
-        onClick={(e) => {
-          e.preventDefault(); // Prevent the link from navigating
-          console.log('Alternatives:', params.row.alternatives);
+        onClick={() => {
+          // TODO: display alternatives panel
         }}
       >
         Show Alternatives

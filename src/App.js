@@ -39,7 +39,6 @@ function App() {
         setCurrentGW(currentGW);
         setSelectedGW(currentGW.id);
         setLoading(false);
-        console.log('currentGW', { currentGW });
       }
     }
   }, [gameweeks]);
@@ -53,9 +52,6 @@ function App() {
       return myPlayerIds.includes(player.id);
     });
   }, [allPlayers, myPlayerIds]);
-
-  // Use the usePlayerHistories hook once for each player ID
-  // const playerHistories = usePlayerHistories(myPlayerIds);
 
   if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
     return <div>Loading something awesome... 😬</div>;

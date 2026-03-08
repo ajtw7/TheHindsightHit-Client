@@ -11,6 +11,7 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
         const res = await fetch(
           `${process.env.REACT_APP_API_URL}/api/${mgrId}/gw-player-stats/${selectedGW}`
         );
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setGWPlayerStats(data);
       } catch (error) {

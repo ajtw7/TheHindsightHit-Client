@@ -9,10 +9,9 @@ export default function useTransfers(mgrId) {
       setLoading(true);
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/transfers/${mgrId}`);
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
-        setMyTransfers((_prevTransfers) => {
-          return data;
-        });
+        setMyTransfers(data);
       } catch (error) {
         console.error('Error fetching transfers', error);
       } finally {

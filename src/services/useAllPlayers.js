@@ -7,10 +7,9 @@ export default function useAllPlayers() {
     const fetchData = async () => {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/all-players`);
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
-        setAllPlayers((_prevAllPlayers) => {
-          return data;
-        });
+        setAllPlayers(data);
       } catch (error) {
         console.error('Error fetching players', error);
       }
