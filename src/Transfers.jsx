@@ -2,6 +2,7 @@ import { useEffect, useState, useContext, useMemo } from 'react';
 import { PlayerContext } from './services/context';
 import { DataGrid } from '@mui/x-data-grid';
 import { transferColumnDef } from './transferColumnDef';
+import { findAlternatives } from './utils/findAlternatives';
 
 export default function Transfers({ myTransfers }) {
   const [enhancedTransfers, setEnhancedTransfers] = useState([]);
@@ -16,32 +17,12 @@ export default function Transfers({ myTransfers }) {
   useEffect(() => {
     if (!myTransfers.length || !uniquePlayerHistories.length) return;
 
-    const findAlternatives = (transfer, gameweek) => {
-      const playerInHistory = uniquePlayerHistories.find(
-        (ph) => ph[0]?.element === transfer.element_in
-      );
-      if (!playerInHistory) return [];
-
-      const playerInGWHistory = playerInHistory.find((h) => h.round === gameweek);
-      const playerInTotalPoints = playerInGWHistory?.total_points ?? null;
-      if (playerInTotalPoints === null) return [];
-
-      return uniquePlayerHistories.flatMap((ph) =>
-        ph.filter(
-          (h) =>
-            h.round === gameweek &&
-            h.total_points > playerInTotalPoints &&
-            h.value <= transfer.element_in_cost
-        )
-      );
-    };
-
     setEnhancedTransfers(
       myTransfers.map((transfer) => ({
         ...transfer,
         element_in: playerLookup[transfer.element_in]?.web_name ?? transfer.element_in,
         element_out: playerLookup[transfer.element_out]?.web_name ?? transfer.element_out,
-        alternatives: findAlternatives(transfer, transfer.event),
+        alternatives: findAlternatives(transfer, transfer.event, uniquePlayerHistories),
       }))
     );
   }, [myTransfers, uniquePlayerHistories, playerLookup]);
