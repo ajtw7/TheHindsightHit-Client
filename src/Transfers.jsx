@@ -24,7 +24,6 @@ export default function Transfers(myTransfers) {
     }, {});
 
     const findAlternatives = (transfer, gameweek) => {
-      console.log('alt trans & gw', { transfer, gameweek });
       const playerInHistory = uniquePlayerHistories.find(
         (playerHistory) => playerHistory[0].element === transfer.element_in
       );
@@ -38,7 +37,7 @@ export default function Transfers(myTransfers) {
         (history) => history.round === gameweek
       );
 
-      const playerInTotalPoints = playerInGWHistory.total_points;
+      const playerInTotalPoints = playerInGWHistory?.total_points ?? null;
 
       return uniquePlayerHistories.flatMap((playerHistories) => {
         const filteredByRound = playerHistories.filter((history) => {
@@ -82,7 +81,7 @@ export default function Transfers(myTransfers) {
             time: false,
             entry: false,
           }}
-          pageSize={5}
+          initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
           getRowId={(row) => `${row.entry}-${row.event}-${row.time}`}
         />
       )}

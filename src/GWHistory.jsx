@@ -7,8 +7,6 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
   const { selectedGW } = useContext(SelectedGWContext);
   const { allPlayers, myPlayerIds } = useContext(PlayerContext);
 
-  // const [currentTeam, setCurrentTeam] = useState([]);
-  // // filter the transfers by the current gameweek
   const selectedGWTransfers = myTransfers.filter(
     (transfer) => transfer.event === selectedGW
   );
@@ -18,7 +16,6 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
 
   // handle the change of the gameweek dropdown
   function handleGWChange(gw) {
-    console.log('GW Change:', gw);
     setSelectedGW(gw);
   }
   return (
@@ -83,8 +80,7 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
                   (player) => player.id === gwData.element
                 );
                 if (!player) {
-                  console.log('No player found with id:', gwData.element);
-                  return null; // Return null to avoid rendering anything for this player
+                  return null;
                 }
                 return (
                   <div
