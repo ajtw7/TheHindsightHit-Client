@@ -60,7 +60,12 @@ function App() {
   const [uniquePlayerHistories] = useManageUniquePlayerHistories(allPlayerHistories);
 
   if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
-    return <div>Loading something awesome... 😬</div>;
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 border-4 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
+        <p className="text-slate-400 text-sm tracking-wide">Loading your data…</p>
+      </div>
+    );
   }
 
   if (mgrId === null) {

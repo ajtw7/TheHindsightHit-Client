@@ -66,10 +66,26 @@ export const transferColumnDef = (onShowAlternatives) => [
     headerAlign: 'center',
     sortable: false,
     valueGetter: (params) => (params.value || []).length,
-    renderCell: (params) => (
-      <button onClick={() => onShowAlternatives(params.row)}>
-        Show Alternatives ({(params.row.alternatives || []).length})
-      </button>
-    ),
+    renderCell: (params) => {
+      const count = (params.row.alternatives || []).length;
+      return (
+        <button
+          onClick={() => onShowAlternatives(params.row)}
+          style={{
+            backgroundColor: count > 0 ? '#10b981' : '#334155',
+            color: count > 0 ? '#0f172a' : '#94a3b8',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '5px 10px',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Show Alternatives ({count})
+        </button>
+      );
+    },
   },
 ];
