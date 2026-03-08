@@ -15,127 +15,101 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
     [uniquePlayerHistories, myPlayerIds]
   );
 
-  // handle the change of the gameweek dropdown
-  function handleGWChange(gw) {
-    setSelectedGW(gw);
-  }
   return (
-    <div
-      style={{
-        display: 'flex',
-        width: '100%',
-        height: '100%',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignContent: 'center',
-        padding: 20,
-      }}
-    >
-      {/* Dropdown to select the game week */}
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <select
-          id="gw-select"
-          value={selectedGW}
-          onChange={(e) => handleGWChange(Number(e.target.value))}
-        >
-          {gwHistory.map((gw) => (
-            <option key={gw.id} value={gw.event}>
-              GW: {gw.event}
-            </option>
-          ))}
-        </select>
+    <div className="bg-slate-900 min-h-screen px-4 py-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold text-white mb-4">Gameweek History</h1>
+
+      {/* GW selector */}
+      <select
+        id="gw-select"
+        value={selectedGW}
+        onChange={(e) => setSelectedGW(Number(e.target.value))}
+        className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-emerald-400"
+      >
+        {gwHistory.map((gw) => (
+          <option key={gw.id} value={gw.event}>
+            GW {gw.event}
+          </option>
+        ))}
+      </select>
+
+      {/* GW summary banner */}
+      {gwHistory
+        .filter((gw) => gw.event === selectedGW)
+        .map((gw) => (
+          <div
+            key={gw.event}
+            className="bg-slate-800 rounded-xl border border-slate-700 px-4 py-4 mb-5 flex justify-between items-center"
+          >
+            <span className="text-slate-400 text-sm font-medium">Gameweek {gw.event}</span>
+            <span className="text-emerald-400 text-2xl font-bold">{gw.points} pts</span>
+          </div>
+        ))}
+
+      {/* Player cards */}
+      <h2 className="text-base font-semibold text-slate-300 mb-3">Players</h2>
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {myUniquePlayerHistories.map((playerHistory) =>
+          playerHistory
+            .filter((gwData) => gwData.round === selectedGW)
+            .map((gwData) => {
+              const player = myPlayers.find((p) => p.id === gwData.element);
+              if (!player) return null;
+              return (
+                <div
+                  key={`${gwData.element}-${gwData.round}`}
+                  className="bg-slate-800 rounded-xl border border-slate-700 p-4"
+                >
+                  <p className="text-white font-semibold text-sm mb-2 truncate">
+                    {player.web_name}
+                  </p>
+                  <p className="text-emerald-400 text-2xl font-bold leading-none mb-1">
+                    {gwData.total_points}
+                  </p>
+                  <p className="text-slate-500 text-xs mb-2">pts</p>
+                  <div className="space-y-0.5 text-xs text-slate-400">
+                    <p>{gwData.minutes} mins</p>
+                    {gwData.goals_scored > 0 && (
+                      <p className="text-emerald-400">{gwData.goals_scored} goal{gwData.goals_scored !== 1 ? 's' : ''}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+        )}
       </div>
 
-      {/* Filer the displayed gameweek history based on the selected gameweek */}
-      <>
-        {gwHistory
-          .filter((gw) => gw.event === selectedGW)
-          .map((gw) => (
-            <div key={gw.event} style={{ padding: 10 }}>
-              <p>GW: {gw.event}</p>
-              <p>Points: {gw.points}</p>
-              <br />
-            </div>
-          ))}
-      </>
-
-      {/* Display the player history for the selected gameweek */}
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            alignContent: 'center',
-            width: '50%',
-            height: 'auto',
-            margin: 'auto',
-          }}
-        >
-          {myUniquePlayerHistories.map((playerHistory) =>
-            playerHistory
-              .filter((gwData) => gwData.round === selectedGW)
-              .map((gwData) => {
-                const player = myPlayers.find(
-                  (player) => player.id === gwData.element
-                );
-                if (!player) {
-                  return null;
-                }
-                return (
-                  <div
-                    key={`${gwData.element}-${gwData.round}-${player.web_name}`}
-                    style={{ padding: 10 }}
-                  >
-                    <p>Player: {player.web_name}</p>
-                    <p>Team: {player.team}</p>
-                    <p>Points: {gwData.total_points}</p>
-                    <p>Minutes: {gwData.minutes}</p>
-                    <p>Goals Scored: {gwData.goals_scored}</p>
-                  </div>
-                );
-              })
-          )}
-        </div>
-        <div style={{ margin: 10 }}>
-          <h1>Transfers</h1>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              alignContent: 'center',
-              width: '100%',
-              height: 'auto',
-              margin: 'auto',
-              backgroundColor: 'lightgray',
-            }}
-          >
+      {/* Transfers for this GW */}
+      {selectedGWTransfers.length > 0 && (
+        <div>
+          <h2 className="text-base font-semibold text-slate-300 mb-3">Transfers</h2>
+          <div className="space-y-2">
             {selectedGWTransfers.map((transfer) => {
-              const playerIn = myPlayers.find(
-                (player) => player.id === transfer.element_in
-              );
-              const playerOut = allPlayers.find(
-                (player) => player.id === transfer.element_out
-              );
+              const playerIn = myPlayers.find((p) => p.id === transfer.element_in);
+              const playerOut = allPlayers.find((p) => p.id === transfer.element_out);
               return (
                 <div
                   key={`${transfer.entry}-${transfer.event}-${transfer.time}`}
-                  style={{ padding: 10 }}
+                  className="bg-slate-800 rounded-xl border border-slate-700 px-4 py-3 flex justify-between items-center"
                 >
-                  <p>In: {playerIn ? playerIn.web_name : 'Unknown Player'}</p>
-                  <p>
-                    Out: {playerOut ? playerOut.web_name : 'Unknown Player'}
-                  </p>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-0.5">IN</p>
+                    <p className="text-emerald-400 font-semibold text-sm">
+                      {playerIn?.web_name ?? 'Unknown'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 mb-0.5">OUT</p>
+                    <p className="text-red-400 font-semibold text-sm">
+                      {playerOut?.web_name ?? 'Unknown'}
+                    </p>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
-// Path: src/GWHistory.js

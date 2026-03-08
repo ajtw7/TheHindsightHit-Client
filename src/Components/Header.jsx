@@ -3,10 +3,14 @@ import Logo from './Logo';
 
 const Header = () => {
   return (
-    <header className="bg-dark-bckground sticky top top-0 z-[20] mx-auto flex flex-wrap w-full items-center justify-between border-gray-500 p-8 ">
-      <Logo />
-      <h1>THE HINDSIGHT HIT</h1>
-      <Nav />
+    <header className="bg-slate-900 border-b border-slate-700 sticky top-0 z-20">
+      <div className="max-w-2xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+        <Logo />
+        <span className="text-emerald-400 font-bold text-base tracking-tight">
+          THE HINDSIGHT HIT
+        </span>
+        <Nav />
+      </div>
     </header>
   );
 };

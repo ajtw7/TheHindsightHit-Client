@@ -1,5 +1,56 @@
 .App {
-  text-align: center;
+  min-height: 100vh;
+  background-color: #0f172a;
+}
+
+/* ── MUI DataGrid dark theme overrides ─────────────────────────────────────── */
+.transfers-grid .MuiDataGrid-root {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border: none;
+  border-radius: 0;
+}
+.transfers-grid .MuiDataGrid-columnHeaders {
+  background-color: #0f172a;
+  color: #94a3b8;
+  border-bottom: 1px solid #334155;
+}
+.transfers-grid .MuiDataGrid-columnHeaderTitle {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.transfers-grid .MuiDataGrid-cell {
+  border-bottom: 1px solid #1e293b;
+  color: #f1f5f9;
+}
+.transfers-grid .MuiDataGrid-row:hover {
+  background-color: #334155;
+}
+.transfers-grid .MuiDataGrid-footerContainer {
+  background-color: #0f172a;
+  color: #94a3b8;
+  border-top: 1px solid #334155;
+}
+.transfers-grid .MuiTablePagination-root,
+.transfers-grid .MuiTablePagination-selectLabel,
+.transfers-grid .MuiTablePagination-displayedRows {
+  color: #94a3b8;
+}
+.transfers-grid .MuiTablePagination-select,
+.transfers-grid .MuiSelect-icon,
+.transfers-grid .MuiTablePagination-selectIcon {
+  color: #94a3b8;
+}
+.transfers-grid .MuiIconButton-root {
+  color: #94a3b8;
+}
+.transfers-grid .MuiIconButton-root.Mui-disabled {
+  color: #475569;
+}
+.transfers-grid .MuiDataGrid-selectedRowCount {
+  color: #94a3b8;
 }
 
 .App-logo {
