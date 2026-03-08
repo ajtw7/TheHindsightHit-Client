@@ -6,6 +6,8 @@ import useMgrData from './services/useMgrData';
 import useGWPlayerStats from './services/useGWPlayerStats';
 import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
+import usePlayerHistories from './services/usePlayerHistories';
+import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
 import Header from './Components/Header';
 import HomePage from './HomePage';
 import ManagerProfile from './ManagerProfile';
@@ -53,6 +55,10 @@ function App() {
     });
   }, [allPlayers, myPlayerIds]);
 
+  const allPlayerIds = useMemo(() => allPlayers.map((p) => p.id), [allPlayers]);
+  const allPlayerHistories = usePlayerHistories(allPlayerIds);
+  const [uniquePlayerHistories] = useManageUniquePlayerHistories(allPlayerHistories);
+
   if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
     return <div>Loading something awesome... 😬</div>;
   }
@@ -69,6 +75,7 @@ function App() {
           mgrData,
           myPlayerIds,
           allPlayers,
+          uniquePlayerHistories,
         }}
       >
         <div className="App">

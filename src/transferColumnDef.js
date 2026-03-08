@@ -1,4 +1,4 @@
-export const transferColumnDef = [
+export const transferColumnDef = (onShowAlternatives) => [
   {
     field: 'element_in',
     headerName: 'Player In',
@@ -60,20 +60,15 @@ export const transferColumnDef = [
   {
     field: 'alternatives',
     headerName: 'Alternatives',
-    width: 150,
+    width: 180,
     flex: 1,
     align: 'center',
     headerAlign: 'center',
-    valueGetter: (params) => {
-      return (params.value || []).map((player) => player.element).join(', ');
-    },
+    sortable: false,
+    valueGetter: (params) => (params.value || []).length,
     renderCell: (params) => (
-      <button
-        onClick={() => {
-          // TODO: display alternatives panel
-        }}
-      >
-        Show Alternatives
+      <button onClick={() => onShowAlternatives(params.row)}>
+        Show Alternatives ({(params.row.alternatives || []).length})
       </button>
     ),
   },
