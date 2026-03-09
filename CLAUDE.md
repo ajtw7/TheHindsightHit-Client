@@ -132,6 +132,7 @@ At the end of every session, before pushing, Claude must update this file:
 - Always push to the designated feature branch (`claude/...`); never push directly to `master`.
 - Do not use `--no-verify` or skip hooks.
 - Group related changes in a single commit; don't commit half-finished work.
+- Do not include Claude session URLs in commit messages.
 
 ---
 
