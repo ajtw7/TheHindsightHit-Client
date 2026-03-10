@@ -134,6 +134,17 @@ At the end of every session, before pushing, Claude must update this file:
 - Group related changes in a single commit; don't commit half-finished work.
 - Do not include Claude session URLs in commit messages.
 
+## Pull Request Guidelines
+
+- **Always open a PR** when a feature branch is ready to merge — never merge directly.
+- Write the PR description in **Markdown**.
+- The description must cover at minimum:
+  - **What changed** — a concise summary of the work done.
+  - **Why** — the problem being solved or feature being added.
+  - **How to test** — steps a reviewer can follow to verify the change works.
+- Keep the PR title short and in imperative mood (e.g. `Fix GW dropdown not updating fixtures`).
+- Reference any related issues or prior PRs where relevant.
+
 ---
 
 ## Key History / What Was Done
