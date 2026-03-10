@@ -36,8 +36,9 @@ src/
 │   ├── useGWPlayerStats.js
 │   ├── useTransfers.js
 │   ├── useGWHistory.js
-│   ├── usePlayerHistories.js          # Fetches per-player history; in-memory cache via useRef
-│   ├── useManageUniquePlayerHistories.js  # Deduplicates history by round
+│   ├── useGWLiveStats.js              # Fetches all-player stats per GW; in-memory cache via useRef
+│   ├── usePlayerHistories.js          # DEAD CODE — superseded by useGWLiveStats; do not call
+│   ├── useManageUniquePlayerHistories.js  # DEAD CODE — superseded by App.js useMemo; do not call
 │   ├── useFixtures.js
 │   └── useAllData.js       # Dead code — unused, do not call
 ├── utils/
@@ -58,18 +59,20 @@ src/
 ### Key data flow
 
 1. `App.js` fetches gameweeks, allPlayers, mgrData, gwPlayerStats, transfers,
-   gwHistory, and — critically — **all player histories** (`usePlayerHistories`).
-2. All player histories are deduplicated (`useManageUniquePlayerHistories`) and
-   distributed via `PlayerContext` as `uniquePlayerHistories`.
-3. `Transfers.jsx` reads from context; `findAlternatives` runs in a `useEffect`
+   and gwHistory.
+2. `neededGWIds` = union of transfer GW IDs and gwHistory GW IDs (typically ≤38).
+   `useGWLiveStats(neededGWIds)` fires one request per GW (replaces ~750 per-player calls).
+3. `uniquePlayerHistories` is built in a `useMemo` from `gwLiveStats`, preserving
+   the existing `Array<Array<{element, round, total_points, value, minutes, goals_scored}>>`
+   shape so all consumers are unchanged. `value` is approximated with `now_cost`
+   from `allPlayers` (historical prices are unavailable from the live-stats endpoint).
+4. `Transfers.jsx` reads from context; `findAlternatives` runs in a `useEffect`
    when both `myTransfers` and `uniquePlayerHistories` are populated.
-4. `GWHistory.jsx` filters `uniquePlayerHistories` down to `myPlayerIds` via
+5. `GWHistory.jsx` filters `uniquePlayerHistories` down to `myPlayerIds` via
    `useMemo` — no additional fetches.
 
-**Never** call `usePlayerHistories` or `useManageUniquePlayerHistories` inside
-a page component. Both must live in `App.js` to prevent duplicate fetches and
-the infinite re-render loop (new array reference → effect re-fires → setState
-→ re-render → repeat).
+**Never** call `useGWLiveStats` inside a page component — it must live in `App.js`
+to prevent duplicate fetches and the infinite re-render loop.
 
 ---
 
@@ -106,8 +109,9 @@ Test files live next to the code they test:
 | File | What it covers |
 |---|---|
 | `src/utils/findAlternatives.test.js` | Core alternatives logic — most thorough |
-| `src/services/usePlayerHistories.test.js` | Fetch, cache, error handling |
-| `src/services/useManageUniquePlayerHistories.test.js` | Round deduplication |
+| `src/services/useGWLiveStats.test.js` | Fetch, cache, error handling for GW live stats |
+| `src/services/usePlayerHistories.test.js` | Fetch, cache, error handling (legacy — hook is dead code) |
+| `src/services/useManageUniquePlayerHistories.test.js` | Round deduplication (legacy — hook is dead code) |
 | `src/transferColumnDef.test.js` | Column shape, callback wiring (legacy — DataGrid removed) |
 | `src/Transfers.test.jsx` | Full integration: modal open/close, correct alternatives |
 | `src/App.test.js` | Smoke test: renders without crashing |
@@ -151,6 +155,12 @@ At the end of every session, before pushing, Claude must update this file:
 
 - **Initial build:** Basic CRA scaffold; custom hooks for FPL API endpoints; Tailwind + CRACO config; NavBar component extracted.
 - **EC2 / hardcoded IP era:** API base URL was hardcoded to an EC2 IP address in every hook.
+- **2026-03-10 — Session 3 (claude/gather-context-oyUrc):**
+  - **Root cause analysis:** diagnosed that `usePlayerHistories(allPlayerIds)` was firing ~750 individual API calls on every load, causing rate-limit hits and extremely slow alternatives loading. The backend was proxying each call to FPL individually.
+  - **Fix — `useGWLiveStats`:** new hook fetches `/api/gw-live-stats/{gwId}` (one call per gameweek) instead of one call per player. In-memory cache (keyed by GW ID) prevents re-fetching. Requires the server to expose `GET /api/gw-live-stats/:gwId` backed by FPL's `/event/{gw}/live/` endpoint.
+  - **App.js refactor:** replaced `usePlayerHistories(allPlayerIds)` + `useManageUniquePlayerHistories` with `useGWLiveStats(neededGWIds)` where `neededGWIds` = union of transfer GWs + history GWs (≤38 calls vs ~750). `uniquePlayerHistories` rebuilt in a `useMemo` preserving the existing consumer interface. `value` field approximated with `now_cost` from allPlayers.
+  - Added `useGWLiveStats.test.js` (fetch, cache, error, re-render stability).
+  - `usePlayerHistories` and `useManageUniquePlayerHistories` are now dead code (not deleted yet).
 - **2026-03-10 — Session 2 (claude/fix-frontend-layout-pUgsn):**
   - **Manager Profile:** widened layout to `max-w-5xl`; split Starting XI vs Bench using `squadPosition` from gwPlayerStats; added clickable player cards that open a profile modal (position, full name, jersey #, total points, price, team name).
   - **App.js GW bug fix:** `useGWPlayerStats` now always uses `currentGW?.id` (not `selectedGW`), so changing the GW History dropdown no longer mutates the Manager Profile squad. `myPlayers` enriched with `squadPosition` + `multiplier` from gwPlayerStats.
@@ -176,12 +186,12 @@ At the end of every session, before pushing, Claude must update this file:
 
 Remaining priorities (in order):
 
-1. **Error state UI** — hooks catch fetch errors but only `console.error`; users see blank/frozen UI with no message. Each hook should expose an `error` state; each page should render a visible error banner.
-2. **Stuck loading screen off-season** — `loading` in `App.js` only resolves when a GW with `is_current: true` is found. If none exists (off-season or API quirk), the app hangs forever. Add a fallback to resolve loading regardless.
-3. **`REACT_APP_API_URL` missing guard** — if the env var is absent every fetch URL becomes `undefined/api/...`. Add a startup assertion with a clear message.
-4. **Delete `useAllData.js`** — unused dead code; creates confusion about how the current GW is determined.
-5. **`src/utils/teams.js` is now dead code** — the static map can be deleted; teams are fetched live via `useTeams`.
-6. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
-7. **GWHistory shows current-squad players only** — since `gwPlayerStats` now always uses `currentGW`, past-GW squad data is not available. If accurate historical lineups are needed, the backend must provide a picks endpoint per GW.
-8. **Delete `transferColumnDef.js`** and its test — dead code since DataGrid was removed from Transfers.
+1. **Server must implement `/api/gw-live-stats/:gwId`** — client now depends on this endpoint. It should proxy FPL's `/event/{gw}/live/` and cache the response (TTL ≥ 1 hour for finished GWs, ~5 min for active GW). Without this the alternatives feature will not work.
+2. **Historical price accuracy** — `value` in `uniquePlayerHistories` is currently approximated with the player's current `now_cost`. For past GWs this can be off by up to ~£1m. Fix options: (a) have the server return historical value from `/element-summary/{id}/` for the players actually transferred in (only ~2/player/GW needed), or (b) accept the approximation.
+3. **Error state UI** — hooks catch fetch errors but only `console.error`; users see blank/frozen UI with no message. Each hook should expose an `error` state; each page should render a visible error banner.
+4. **Stuck loading screen off-season** — `loading` in `App.js` only resolves when a GW with `is_current: true` is found. If none exists (off-season or API quirk), the app hangs forever. Add a fallback to resolve loading regardless.
+5. **`REACT_APP_API_URL` missing guard** — if the env var is absent every fetch URL becomes `undefined/api/...`. Add a startup assertion with a clear message.
+6. **Clean up dead code** — delete `usePlayerHistories.js`, `useManageUniquePlayerHistories.js`, `useAllData.js`, `transferColumnDef.js`, `src/utils/teams.js`, and their tests.
+7. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
+8. **GWHistory shows current-squad players only** — since `gwPlayerStats` now always uses `currentGW`, past-GW squad data is not available. If accurate historical lineups are needed, the backend must provide a picks endpoint per GW.
 9. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.

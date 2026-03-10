@@ -6,8 +6,7 @@ import useMgrData from './services/useMgrData';
 import useGWPlayerStats from './services/useGWPlayerStats';
 import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
-import usePlayerHistories from './services/usePlayerHistories';
-import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
+import useGWLiveStats from './services/useGWLiveStats';
 import useTeams from './services/useTeams';
 import Header from './Components/Header';
 import HomePage from './HomePage';
@@ -67,9 +66,45 @@ function App() {
 
   const teams = useTeams();
 
-  const allPlayerIds = useMemo(() => allPlayers.map((p) => p.id), [allPlayers]);
-  const allPlayerHistories = usePlayerHistories(allPlayerIds);
-  const [uniquePlayerHistories] = useManageUniquePlayerHistories(allPlayerHistories);
+  // Fetch GW live stats only for the GWs we actually need:
+  // transfer GWs (for alternatives) + history GWs (for GWHistory player cards).
+  // This replaces ~750 individual player-history calls with one call per GW.
+  const neededGWIds = useMemo(() => {
+    const transferGWs = myTransfers.map((t) => t.event);
+    const historyGWs = gwHistory.map((h) => h.event);
+    return [...new Set([...transferGWs, ...historyGWs])];
+  }, [myTransfers, gwHistory]);
+
+  const gwLiveStats = useGWLiveStats(neededGWIds);
+
+  // Build a price lookup from allPlayers (now_cost) used as a budget proxy
+  // when finding alternatives — GW live stats don't carry historical prices.
+  const allPlayersById = useMemo(
+    () => allPlayers.reduce((acc, p) => { acc[p.id] = p; return acc; }, {}),
+    [allPlayers]
+  );
+
+  // Reconstruct uniquePlayerHistories in the same nested-array shape that
+  // GWHistory and findAlternatives already expect.
+  const uniquePlayerHistories = useMemo(() => {
+    const byPlayer = {};
+    for (const [gwId, data] of Object.entries(gwLiveStats)) {
+      const elements = data.elements ?? [];
+      for (const el of elements) {
+        const id = el.id;
+        if (!byPlayer[id]) byPlayer[id] = [];
+        byPlayer[id].push({
+          element: id,
+          round: Number(gwId),
+          total_points: el.stats.total_points,
+          value: allPlayersById[id]?.now_cost ?? 0,
+          minutes: el.stats.minutes,
+          goals_scored: el.stats.goals_scored,
+        });
+      }
+    }
+    return Object.values(byPlayer);
+  }, [gwLiveStats, allPlayersById]);
 
   if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
     return (
