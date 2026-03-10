@@ -3,27 +3,6 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import Transfers from './Transfers';
 import { PlayerContext } from './services/context';
 
-// ─── mock DataGrid ────────────────────────────────────────────────────────────
-// MUI DataGrid requires ResizeObserver and other browser APIs not present in jsdom.
-// We only care about our own logic (alternatives calculation, modal flow), not MUI's grid.
-jest.mock('@mui/x-data-grid', () => ({
-  DataGrid: ({ rows, columns }) => {
-    const altCol = columns.find((c) => c.field === 'alternatives');
-    return (
-      <div data-testid="data-grid">
-        {rows.map((row) => (
-          <div
-            key={`${row.entry}-${row.event}-${row.time}`}
-            data-testid="grid-row"
-          >
-            {altCol?.renderCell?.({ row, value: row.alternatives })}
-          </div>
-        ))}
-      </div>
-    );
-  },
-}));
-
 // ─── fixtures ─────────────────────────────────────────────────────────────────
 
 const entry = (element, round, total_points, value) => ({
@@ -76,14 +55,11 @@ const renderTransfers = (
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-const waitForGrid = () =>
-  waitFor(() => expect(screen.getByTestId('data-grid')).toBeInTheDocument());
-
 const openModal = async () => {
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: /Show Alternatives/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Show \d+ Alternative/ })).toBeInTheDocument()
   );
-  fireEvent.click(screen.getByRole('button', { name: /Show Alternatives/ }));
+  fireEvent.click(screen.getByRole('button', { name: /Show \d+ Alternative/ }));
   await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
 };
 
@@ -100,14 +76,14 @@ describe('Transfers', () => {
       renderTransfers();
       await waitFor(() =>
         expect(
-          screen.getByRole('button', { name: /Show Alternatives/ })
+          screen.getByRole('button', { name: /Show \d+ Alternative/ })
         ).toBeInTheDocument()
       );
     });
 
-    it('does not render rows while transfers or histories are empty', () => {
+    it('does not render transfer cards while transfers are empty', () => {
       renderTransfers([], []);
-      expect(screen.queryAllByTestId('grid-row')).toHaveLength(0);
+      expect(screen.queryByText(/GW \d/)).not.toBeInTheDocument();
     });
   });
 
@@ -116,19 +92,19 @@ describe('Transfers', () => {
       renderTransfers();
       await waitFor(() =>
         expect(
-          screen.getByRole('button', { name: 'Show Alternatives (1)' })
+          screen.getByRole('button', { name: 'Show 1 Alternative' })
         ).toBeInTheDocument()
       );
       // Only Saka qualifies (9 pts > 3, £7.5m ≤ £8.0m); Haaland is over budget
     });
 
-    it('shows count 0 when no alternatives qualify', async () => {
+    it('shows "No Better Alternatives Found" when no alternatives qualify', async () => {
       // Transfer in a player who outscored everyone
       const dominantTransfer = { ...baseTransfer, element_in: 20 }; // Haaland, 14 pts
       renderTransfers([dominantTransfer]);
       await waitFor(() =>
         expect(
-          screen.getByRole('button', { name: 'Show Alternatives (0)' })
+          screen.getByRole('button', { name: 'No Better Alternatives Found' })
         ).toBeInTheDocument()
       );
     });
@@ -141,9 +117,9 @@ describe('Transfers', () => {
       };
       renderTransfers([baseTransfer, secondTransfer]);
       await waitFor(() => {
-        const buttons = screen.getAllByRole('button', { name: /Show Alternatives/ });
+        const buttons = screen.getAllByRole('button', { name: /Show \d+ Alternative/ });
         expect(buttons).toHaveLength(2);
-        buttons.forEach((btn) => expect(btn).toHaveTextContent('Show Alternatives (1)'));
+        buttons.forEach((btn) => expect(btn).toHaveTextContent('Show 1 Alternative'));
       });
     });
   });
@@ -152,7 +128,8 @@ describe('Transfers', () => {
     it('displays the transferred-in player name in the modal', async () => {
       renderTransfers();
       await openModal();
-      expect(screen.getByText('Salah')).toBeInTheDocument();
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getByText(/Salah/)).toBeInTheDocument();
     });
   });
 
@@ -170,7 +147,7 @@ describe('Transfers', () => {
         renderTransfers();
         await openModal();
         expect(
-          screen.getByRole('heading', { name: /Alternatives for GW5/ })
+          screen.getByRole('heading', { name: /GW5 Alternatives/ })
         ).toBeInTheDocument();
       });
 
@@ -204,13 +181,6 @@ describe('Transfers', () => {
         // Saka value = 75 → £7.5m
         expect(within(dialog).getByText(/£7\.5m/)).toBeInTheDocument();
       });
-
-      it('formats the alternative entry as "Name — pts pts @ £Xm"', async () => {
-        renderTransfers();
-        await openModal();
-        const dialog = screen.getByRole('dialog');
-        expect(within(dialog).getByText(/Saka — 9 pts @ £7\.5m/)).toBeInTheDocument();
-      });
     });
 
     describe('alternatives list — disqualified players', () => {
@@ -233,7 +203,14 @@ describe('Transfers', () => {
       it('shows the empty-state message when there are no qualifying alternatives', async () => {
         const dominantTransfer = { ...baseTransfer, element_in: 20 }; // Haaland, 14 pts
         renderTransfers([dominantTransfer]);
-        await openModal();
+        // Open via the "No Better Alternatives Found" button
+        await waitFor(() =>
+          expect(
+            screen.getByRole('button', { name: 'No Better Alternatives Found' })
+          ).toBeInTheDocument()
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'No Better Alternatives Found' }));
+        await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
         expect(
           screen.getByText('No better alternatives available within budget.')
         ).toBeInTheDocument();
@@ -242,7 +219,13 @@ describe('Transfers', () => {
       it('does not render a list when there are no alternatives', async () => {
         const dominantTransfer = { ...baseTransfer, element_in: 20 };
         renderTransfers([dominantTransfer]);
-        await openModal();
+        await waitFor(() =>
+          expect(
+            screen.getByRole('button', { name: 'No Better Alternatives Found' })
+          ).toBeInTheDocument()
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'No Better Alternatives Found' }));
+        await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
         expect(screen.queryByRole('list')).not.toBeInTheDocument();
       });
     });
@@ -271,7 +254,7 @@ describe('Transfers', () => {
         renderTransfers();
         await openModal();
         // Click inside the modal body (the inner div) — should NOT close
-        const heading = screen.getByRole('heading', { name: /Alternatives for GW/ });
+        const heading = screen.getByRole('heading', { name: /GW\d+ Alternatives/ });
         fireEvent.click(heading);
         expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
@@ -289,7 +272,7 @@ describe('Transfers', () => {
       renderTransfers([gw6Transfer], gw6Histories);
       await waitFor(() =>
         expect(
-          screen.getByRole('button', { name: 'Show Alternatives (0)' })
+          screen.getByRole('button', { name: 'No Better Alternatives Found' })
         ).toBeInTheDocument()
       );
     });
@@ -304,7 +287,7 @@ describe('Transfers', () => {
       renderTransfers([baseTransfer], multiRoundHistories); // GW5 transfer
       await waitFor(() =>
         expect(
-          screen.getByRole('button', { name: 'Show Alternatives (1)' })
+          screen.getByRole('button', { name: 'Show 1 Alternative' })
         ).toBeInTheDocument()
       );
     });
