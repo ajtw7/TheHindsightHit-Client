@@ -8,6 +8,7 @@ import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
 import usePlayerHistories from './services/usePlayerHistories';
 import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
+import useTeams from './services/useTeams';
 import Header from './Components/Header';
 import HomePage from './HomePage';
 import ManagerProfile from './ManagerProfile';
@@ -64,6 +65,8 @@ function App() {
       });
   }, [allPlayers, myPlayerIds, gwPlayerStats]);
 
+  const teams = useTeams();
+
   const allPlayerIds = useMemo(() => allPlayers.map((p) => p.id), [allPlayers]);
   const allPlayerHistories = usePlayerHistories(allPlayerIds);
   const [uniquePlayerHistories] = useManageUniquePlayerHistories(allPlayerHistories);
@@ -90,6 +93,7 @@ function App() {
           myPlayerIds,
           allPlayers,
           uniquePlayerHistories,
+          teams,
         }}
       >
         <div className="App">

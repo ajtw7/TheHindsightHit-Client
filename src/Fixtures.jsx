@@ -1,11 +1,10 @@
 import { useContext, useState, useMemo } from 'react';
 import useFixtures from './services/useFixtures';
 import { PlayerContext } from './services/context';
-import { FPL_TEAMS } from './utils/teams';
 
 export default function Fixtures() {
   const fixtures = useFixtures();
-  const { currentGW } = useContext(PlayerContext);
+  const { currentGW, teams } = useContext(PlayerContext);
   const [selectedGW, setSelectedGW] = useState(null);
 
   const availableGWs = useMemo(
@@ -21,7 +20,11 @@ export default function Fixtures() {
     [fixtures, effectiveGW]
   );
 
-  const teamName = (id) => FPL_TEAMS[id] ?? `Team ${id}`;
+  const teamLookup = useMemo(
+    () => teams.reduce((acc, t) => { acc[t.id] = t; return acc; }, {}),
+    [teams]
+  );
+  const teamName = (id) => teamLookup[id]?.name ?? `Team ${id}`;
 
   return (
     <div className="bg-slate-900 min-h-screen px-4 py-6 max-w-3xl mx-auto">

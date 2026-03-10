@@ -1,6 +1,5 @@
 import { useContext, useState } from 'react';
 import { PlayerContext } from './services/context';
-import { FPL_TEAMS } from './utils/teams';
 
 const POSITION_MAP = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' };
 
@@ -29,8 +28,8 @@ function PlayerCard({ player, onClick }) {
   );
 }
 
-function PlayerModal({ player, onClose }) {
-  const teamName = FPL_TEAMS[player.team] ?? `Team ${player.team}`;
+function PlayerModal({ player, teamLookup, onClose }) {
+  const teamName = teamLookup[player.team]?.name ?? `Team ${player.team}`;
   const pos = POSITION_MAP[player.element_type] ?? '—';
 
   return (
@@ -95,8 +94,10 @@ function PlayerModal({ player, onClose }) {
 }
 
 export default function ManagerProfile({ myPlayers }) {
-  const { mgrData } = useContext(PlayerContext);
+  const { mgrData, teams } = useContext(PlayerContext);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  const teamLookup = teams.reduce((acc, t) => { acc[t.id] = t; return acc; }, {});
 
   const {
     id,
@@ -183,6 +184,7 @@ export default function ManagerProfile({ myPlayers }) {
       {selectedPlayer && (
         <PlayerModal
           player={selectedPlayer}
+          teamLookup={teamLookup}
           onClose={() => setSelectedPlayer(null)}
         />
       )}
