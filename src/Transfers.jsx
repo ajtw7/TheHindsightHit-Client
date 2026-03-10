@@ -1,12 +1,11 @@
 import { useEffect, useState, useContext, useMemo } from 'react';
 import { PlayerContext } from './services/context';
-import { DataGrid } from '@mui/x-data-grid';
-import { transferColumnDef } from './transferColumnDef';
 import { findAlternatives } from './utils/findAlternatives';
 
 export default function Transfers({ myTransfers }) {
   const [enhancedTransfers, setEnhancedTransfers] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedGW, setSelectedGW] = useState(null);
   const { allPlayers, uniquePlayerHistories } = useContext(PlayerContext);
 
   const playerLookup = useMemo(
@@ -20,34 +19,123 @@ export default function Transfers({ myTransfers }) {
     setEnhancedTransfers(
       myTransfers.map((transfer) => ({
         ...transfer,
-        element_in: playerLookup[transfer.element_in]?.web_name ?? transfer.element_in,
-        element_out: playerLookup[transfer.element_out]?.web_name ?? transfer.element_out,
-        alternatives: findAlternatives(transfer, transfer.event, uniquePlayerHistories),
+        playerIn: playerLookup[transfer.element_in] ?? { web_name: `#${transfer.element_in}` },
+        playerOut: playerLookup[transfer.element_out] ?? { web_name: `#${transfer.element_out}` },
+        alternatives: findAlternatives(transfer, transfer.event, uniquePlayerHistories)
+          .sort((a, b) => b.total_points - a.total_points),
       }))
     );
   }, [myTransfers, uniquePlayerHistories, playerLookup]);
 
-  const columns = useMemo(() => transferColumnDef(setSelectedRow), []);
+  const availableGWs = useMemo(
+    () => [...new Set(myTransfers.map((t) => t.event))].sort((a, b) => b - a),
+    [myTransfers]
+  );
+
+  const filteredTransfers = useMemo(
+    () =>
+      selectedGW == null
+        ? enhancedTransfers
+        : enhancedTransfers.filter((t) => t.event === selectedGW),
+    [enhancedTransfers, selectedGW]
+  );
 
   return (
-    <div className="bg-slate-900 min-h-screen px-4 py-6 max-w-2xl mx-auto">
+    <div className="bg-slate-900 min-h-screen px-4 py-6 w-full max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-white mb-1">Transfers</h1>
-      <p className="text-slate-400 text-sm mb-4">
-        Tap <span className="text-emerald-400 font-medium">Show Alternatives</span> on
-        any row to see who you could have bought instead.
+      <p className="text-slate-400 text-sm mb-5">
+        Tap <span className="text-emerald-400 font-medium">Show Alternatives</span> to
+        see who you could have bought instead.
       </p>
 
-      <div className="transfers-grid overflow-x-auto rounded-xl border border-slate-700">
-        <DataGrid
-          rows={enhancedTransfers}
-          columns={columns}
-          columnVisibilityModel={{ time: false, entry: false }}
-          initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
-          getRowId={(row) => `${row.entry}-${row.event}-${row.time}`}
-          autoHeight
-        />
-      </div>
+      {/* GW filter */}
+      <select
+        value={selectedGW ?? ''}
+        onChange={(e) =>
+          setSelectedGW(e.target.value ? Number(e.target.value) : null)
+        }
+        className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 mb-5 focus:outline-none focus:border-emerald-400"
+      >
+        <option value="">All Gameweeks</option>
+        {availableGWs.map((gw) => (
+          <option key={gw} value={gw}>
+            GW {gw}
+          </option>
+        ))}
+      </select>
 
+      {filteredTransfers.length === 0 ? (
+        <p className="text-slate-400 text-sm text-center py-10">
+          No transfers for this gameweek.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {filteredTransfers.map((transfer) => (
+            <div
+              key={`${transfer.entry}-${transfer.event}-${transfer.time}`}
+              className="bg-slate-800 rounded-2xl border border-slate-700 p-4"
+            >
+              {/* GW badge + date */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">
+                  GW {transfer.event}
+                </span>
+                <span className="text-slate-500 text-xs">
+                  {new Date(transfer.time).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+
+              {/* Player in / out */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-slate-700/50 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
+                    In
+                  </p>
+                  <p className="text-emerald-400 font-bold text-sm leading-snug">
+                    {transfer.playerIn.web_name}
+                  </p>
+                  <p className="text-slate-400 text-xs mt-1">
+                    £{(transfer.element_in_cost / 10).toFixed(1)}m
+                  </p>
+                </div>
+                <div className="bg-slate-700/50 rounded-xl p-3">
+                  <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
+                    Out
+                  </p>
+                  <p className="text-red-400 font-bold text-sm leading-snug">
+                    {transfer.playerOut.web_name}
+                  </p>
+                  <p className="text-slate-400 text-xs mt-1">
+                    £{(transfer.element_out_cost / 10).toFixed(1)}m
+                  </p>
+                </div>
+              </div>
+
+              {/* Show Alternatives button */}
+              <button
+                onClick={() => setSelectedRow(transfer)}
+                className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                  transfer.alternatives?.length > 0
+                    ? 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white'
+                    : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                }`}
+              >
+                {transfer.alternatives?.length > 0
+                  ? `Show ${transfer.alternatives.length} Alternative${
+                      transfer.alternatives.length !== 1 ? 's' : ''
+                    }`
+                  : 'No Better Alternatives Found'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Alternatives bottom-sheet modal */}
       {selectedRow && (
         <div
           role="dialog"
@@ -69,8 +157,11 @@ export default function Transfers({ myTransfers }) {
             </div>
 
             <p className="text-slate-400 text-sm mb-4">
-              You transferred in{' '}
-              <span className="text-white font-semibold">{selectedRow.element_in}</span>
+              You brought in{' '}
+              <span className="text-white font-semibold">
+                {selectedRow.playerIn.web_name}
+              </span>{' '}
+              — these players scored more at the same or lower cost:
             </p>
 
             {selectedRow.alternatives.length === 0 ? (
@@ -90,7 +181,7 @@ export default function Transfers({ myTransfers }) {
                     <span className="text-white font-medium text-sm">
                       {playerLookup[alt.element]?.web_name ?? `Player ${alt.element}`}
                     </span>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0 ml-3">
                       <span className="text-emerald-400 font-bold text-sm">
                         {alt.total_points} pts
                       </span>

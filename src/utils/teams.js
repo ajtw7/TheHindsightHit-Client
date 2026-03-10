@@ -1,0 +1,24 @@
+// Static FPL team map for 2024/25 season.
+// Replace with a /api/teams call if dynamic data is needed in future seasons.
+export const FPL_TEAMS = {
+  1: 'Arsenal',
+  2: 'Aston Villa',
+  3: 'Bournemouth',
+  4: 'Brentford',
+  5: 'Brighton',
+  6: 'Chelsea',
+  7: 'Crystal Palace',
+  8: 'Everton',
+  9: 'Fulham',
+  10: 'Ipswich',
+  11: 'Leicester',
+  12: 'Liverpool',
+  13: 'Man City',
+  14: 'Man Utd',
+  15: 'Newcastle',
+  16: 'Nottm Forest',
+  17: 'Southampton',
+  18: 'Spurs',
+  19: 'West Ham',
+  20: 'Wolves',
+};

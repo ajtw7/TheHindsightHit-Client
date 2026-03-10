@@ -8,6 +8,7 @@ import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
 import usePlayerHistories from './services/usePlayerHistories';
 import { useManageUniquePlayerHistories } from './services/useManageUniquePlayerHistories';
+import useTeams from './services/useTeams';
 import Header from './Components/Header';
 import HomePage from './HomePage';
 import ManagerProfile from './ManagerProfile';
@@ -27,8 +28,10 @@ function App() {
 
   const { mgrData } = useMgrData(mgrId);
   const allPlayers = useAllPlayers();
+  // Always fetch stats for the CURRENT GW so that the Manager Profile
+  // squad display is never affected by the GW History dropdown selection.
   const { gwPlayerStats, loading: gwPlayerStatsLoading } = useGWPlayerStats(
-    selectedGW,
+    currentGW?.id,
     mgrId
   );
   const { myTransfers } = useTransfers(mgrId);
@@ -50,10 +53,19 @@ function App() {
   }, [gwPlayerStats]);
 
   const myPlayers = useMemo(() => {
-    return allPlayers.filter((player) => {
-      return myPlayerIds.includes(player.id);
-    });
-  }, [allPlayers, myPlayerIds]);
+    const statsById = gwPlayerStats.reduce((acc, s) => {
+      acc[s.element] = s;
+      return acc;
+    }, {});
+    return allPlayers
+      .filter((p) => myPlayerIds.includes(p.id))
+      .map((p) => {
+        const stats = statsById[p.id];
+        return { ...p, squadPosition: stats?.position, multiplier: stats?.multiplier };
+      });
+  }, [allPlayers, myPlayerIds, gwPlayerStats]);
+
+  const teams = useTeams();
 
   const allPlayerIds = useMemo(() => allPlayers.map((p) => p.id), [allPlayers]);
   const allPlayerHistories = usePlayerHistories(allPlayerIds);
@@ -81,6 +93,7 @@ function App() {
           myPlayerIds,
           allPlayers,
           uniquePlayerHistories,
+          teams,
         }}
       >
         <div className="App">
