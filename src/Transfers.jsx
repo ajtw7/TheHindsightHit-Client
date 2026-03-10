@@ -14,15 +14,17 @@ export default function Transfers({ myTransfers }) {
   );
 
   useEffect(() => {
-    if (!myTransfers.length || !uniquePlayerHistories.length) return;
+    if (!myTransfers.length) return;
 
     setEnhancedTransfers(
       myTransfers.map((transfer) => ({
         ...transfer,
         playerIn: playerLookup[transfer.element_in] ?? { web_name: `#${transfer.element_in}` },
         playerOut: playerLookup[transfer.element_out] ?? { web_name: `#${transfer.element_out}` },
-        alternatives: findAlternatives(transfer, transfer.event, uniquePlayerHistories)
-          .sort((a, b) => b.total_points - a.total_points),
+        alternatives: uniquePlayerHistories.length
+          ? findAlternatives(transfer, transfer.event, uniquePlayerHistories)
+              .sort((a, b) => b.total_points - a.total_points)
+          : null,
       }))
     );
   }, [myTransfers, uniquePlayerHistories, playerLookup]);
@@ -117,14 +119,19 @@ export default function Transfers({ myTransfers }) {
 
               {/* Show Alternatives button */}
               <button
-                onClick={() => setSelectedRow(transfer)}
+                onClick={() => transfer.alternatives !== null && setSelectedRow(transfer)}
+                disabled={transfer.alternatives === null}
                 className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                  transfer.alternatives?.length > 0
+                  transfer.alternatives === null
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    : transfer.alternatives.length > 0
                     ? 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white'
                     : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
                 }`}
               >
-                {transfer.alternatives?.length > 0
+                {transfer.alternatives === null
+                  ? 'Loading alternatives…'
+                  : transfer.alternatives.length > 0
                   ? `Show ${transfer.alternatives.length} Alternative${
                       transfer.alternatives.length !== 1 ? 's' : ''
                     }`
