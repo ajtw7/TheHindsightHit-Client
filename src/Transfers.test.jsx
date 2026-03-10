@@ -85,6 +85,44 @@ describe('Transfers', () => {
       renderTransfers([], []);
       expect(screen.queryByText(/GW \d/)).not.toBeInTheDocument();
     });
+
+    it('renders transfer cards immediately when transfers are loaded but histories are still empty', async () => {
+      renderTransfers([baseTransfer], []);
+      await waitFor(() =>
+        expect(screen.queryAllByText(/GW \d/).length).toBeGreaterThan(0)
+      );
+    });
+
+    it('shows "Loading alternatives…" while player histories are not yet available', async () => {
+      renderTransfers([baseTransfer], []);
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', { name: 'Loading alternatives…' })
+        ).toBeInTheDocument()
+      );
+    });
+
+    it('replaces "Loading alternatives…" with a real count once histories arrive', async () => {
+      const { rerender } = render(
+        <PlayerContext.Provider value={{ allPlayers, uniquePlayerHistories: [] }}>
+          <Transfers myTransfers={[baseTransfer]} />
+        </PlayerContext.Provider>
+      );
+
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Loading alternatives…' })).toBeInTheDocument()
+      );
+
+      rerender(
+        <PlayerContext.Provider value={{ allPlayers, uniquePlayerHistories }}>
+          <Transfers myTransfers={[baseTransfer]} />
+        </PlayerContext.Provider>
+      );
+
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Show 1 Alternative' })).toBeInTheDocument()
+      );
+    });
   });
 
   describe('alternatives count in button', () => {
