@@ -7,10 +7,10 @@ export default function HomePage({ setMgrId }) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setMgrId(Number(inputValue));
+    const id = Number(inputValue);
+    setMgrId(id);
     setInputValue('');
-    navigate('/manager-profile');
-    // console.log('setMgrId:', setMgrId);
+    navigate(`/manager/${id}/profile`);
   };
 
   return (

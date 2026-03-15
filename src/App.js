@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import useGameweeks from './services/useGameweeks';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
@@ -23,9 +23,18 @@ function App() {
   const { gameweeks, error: gameweeksError } = useGameweeks();
   const [currentGW, setCurrentGW] = useState(null);
   const [selectedGW, setSelectedGW] = useState(currentGW);
-  const [mgrId, setMgrId] = useState(null);
+  const [mgrId, setMgrId] = useState(() => {
+    const saved = localStorage.getItem('mgrId');
+    return saved ? Number(saved) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [isOffSeason, setIsOffSeason] = useState(false);
+
+  // Persist mgrId to localStorage
+  useEffect(() => {
+    if (mgrId) localStorage.setItem('mgrId', mgrId);
+    else localStorage.removeItem('mgrId');
+  }, [mgrId]);
 
   const { mgrData, error: mgrDataError } = useMgrData(mgrId);
   const { allPlayers, error: allPlayersError } = useAllPlayers();
@@ -158,8 +167,18 @@ function App() {
     );
   }
 
+  const handleSwitchTeam = useCallback(() => {
+    setMgrId(null);
+  }, []);
+
   if (mgrId === null) {
-    return <HomePage setMgrId={setMgrId} />;
+    return (
+      <Routes>
+        <Route path="/" element={<HomePage setMgrId={setMgrId} />} />
+        {/* Redirect any /manager/... URL back to home when no team is selected */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -175,20 +194,20 @@ function App() {
         }}
       >
         <div className="App">
-          <Header />
+          <Header mgrId={mgrId} onSwitchTeam={handleSwitchTeam} />
           {isOffSeason && (
             <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm text-center px-4 py-2">
               No active gameweek — showing most recent data
             </div>
           )}
           <Routes>
-            <Route path="/" element={<HomePage setMgrId={setMgrId} />} />
+            <Route path="/" element={<Navigate to={`/manager/${mgrId}/profile`} replace />} />
             <Route
-              path="/manager-profile"
+              path="/manager/:mgrId/profile"
               element={<ManagerProfile myPlayers={myPlayers} />}
             />
             <Route
-              path="/gameweek-history"
+              path="/manager/:mgrId/gameweek-history"
               element={
                 <GWHistory
                   gwHistory={gwHistory}
@@ -198,11 +217,16 @@ function App() {
                 />
               }
             />
-            <Route path="/fixtures" element={<Fixtures />} />
+            <Route path="/manager/:mgrId/fixtures" element={<Fixtures />} />
             <Route
-              path="/transfers"
+              path="/manager/:mgrId/transfers"
               element={<Transfers myTransfers={myTransfers} />}
             />
+            {/* Redirect old bookmarked URLs */}
+            <Route path="/manager-profile" element={<Navigate to={`/manager/${mgrId}/profile`} replace />} />
+            <Route path="/gameweek-history" element={<Navigate to={`/manager/${mgrId}/gameweek-history`} replace />} />
+            <Route path="/fixtures" element={<Navigate to={`/manager/${mgrId}/fixtures`} replace />} />
+            <Route path="/transfers" element={<Navigate to={`/manager/${mgrId}/transfers`} replace />} />
           </Routes>
         </div>
       </PlayerContext.Provider>
