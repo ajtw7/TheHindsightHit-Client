@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 export default function useFixtures() {
   const [fixtures, setFixtures] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -10,12 +11,13 @@ export default function useFixtures() {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setFixtures(data);
-      } catch (error) {
-        console.error('Error fetching fixtures', error);
+      } catch (err) {
+        console.error('Error fetching fixtures', err);
+        setError(err.message || 'Failed to fetch fixtures');
       }
     };
     fetchData();
   }, []);
-  return fixtures;
+  return { fixtures, error };
 }
 // Path: src/services/useFixtures.js
