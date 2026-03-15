@@ -102,6 +102,14 @@ export default function Transfers({ myTransfers }) {
                   </p>
                   <p className="text-slate-400 text-xs mt-1">
                     £{(transfer.element_in_cost / 10).toFixed(1)}m
+                    {transfer.playerIn.now_cost != null && transfer.playerIn.now_cost !== transfer.element_in_cost && (
+                      <>
+                        {' → '}£{(transfer.playerIn.now_cost / 10).toFixed(1)}m{' '}
+                        <span className={transfer.playerIn.now_cost > transfer.element_in_cost ? 'text-emerald-400' : 'text-red-400'}>
+                          {transfer.playerIn.now_cost > transfer.element_in_cost ? '+' : '-'}£{(Math.abs(transfer.playerIn.now_cost - transfer.element_in_cost) / 10).toFixed(1)}m
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="bg-slate-700/50 rounded-xl p-3">
@@ -113,6 +121,14 @@ export default function Transfers({ myTransfers }) {
                   </p>
                   <p className="text-slate-400 text-xs mt-1">
                     £{(transfer.element_out_cost / 10).toFixed(1)}m
+                    {transfer.playerOut.now_cost != null && transfer.playerOut.now_cost !== transfer.element_out_cost && (
+                      <>
+                        {' → '}£{(transfer.playerOut.now_cost / 10).toFixed(1)}m{' '}
+                        <span className={transfer.playerOut.now_cost > transfer.element_out_cost ? 'text-emerald-400' : 'text-red-400'}>
+                          {transfer.playerOut.now_cost > transfer.element_out_cost ? '+' : '-'}£{(Math.abs(transfer.playerOut.now_cost - transfer.element_out_cost) / 10).toFixed(1)}m
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -194,6 +210,19 @@ export default function Transfers({ myTransfers }) {
                       </span>
                       <span className="text-slate-400 text-xs ml-2">
                         £{(alt.value / 10).toFixed(1)}m
+                        {(() => {
+                          const nowCost = playerLookup[alt.element]?.now_cost;
+                          if (nowCost == null || nowCost === alt.value) return null;
+                          const diff = nowCost - alt.value;
+                          return (
+                            <>
+                              {' → '}£{(nowCost / 10).toFixed(1)}m{' '}
+                              <span className={diff > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                                {diff > 0 ? '+' : '-'}£{(Math.abs(diff) / 10).toFixed(1)}m
+                              </span>
+                            </>
+                          );
+                        })()}
                       </span>
                     </div>
                   </li>
