@@ -7,6 +7,7 @@ import useGWPlayerStats from './services/useGWPlayerStats';
 import useTransfers from './services/useTransfers';
 import useGWHistory from './services/useGWHistory';
 import useGWLiveStats from './services/useGWLiveStats';
+import useHistoricalPrices from './services/useHistoricalPrices';
 import useTeams from './services/useTeams';
 import Header from './Components/Header';
 import HomePage from './HomePage';
@@ -19,31 +20,40 @@ import { SelectedGWContext } from './services/context';
 import './styles/App.css';
 
 function App() {
-  const { gameweeks } = useGameweeks();
+  const { gameweeks, error: gameweeksError } = useGameweeks();
   const [currentGW, setCurrentGW] = useState(null);
   const [selectedGW, setSelectedGW] = useState(currentGW);
   const [mgrId, setMgrId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isOffSeason, setIsOffSeason] = useState(false);
 
-  const { mgrData } = useMgrData(mgrId);
-  const allPlayers = useAllPlayers();
+  const { mgrData, error: mgrDataError } = useMgrData(mgrId);
+  const { allPlayers, error: allPlayersError } = useAllPlayers();
   // Always fetch stats for the CURRENT GW so that the Manager Profile
   // squad display is never affected by the GW History dropdown selection.
-  const { gwPlayerStats, loading: gwPlayerStatsLoading } = useGWPlayerStats(
+  const { gwPlayerStats, loading: gwPlayerStatsLoading, error: gwPlayerStatsError } = useGWPlayerStats(
     currentGW?.id,
     mgrId
   );
-  const { myTransfers } = useTransfers(mgrId);
-  const { gwHistory, gwHistoryLoading } = useGWHistory(mgrId);
+  const { myTransfers, error: transfersError } = useTransfers(mgrId);
+  const { gwHistory, loading: gwHistoryLoading, error: gwHistoryError } = useGWHistory(mgrId);
 
   useEffect(() => {
     if (gameweeks.length > 0) {
-      const currentGW = gameweeks.find((gw) => gw.is_current);
-      if (currentGW) {
-        setCurrentGW(currentGW);
-        setSelectedGW(currentGW.id);
-        setLoading(false);
+      const current = gameweeks.find((gw) => gw.is_current);
+      if (current) {
+        setCurrentGW(current);
+        setSelectedGW(current.id);
+      } else {
+        // Off-season fallback: use the last finished GW, or the last GW overall
+        const fallback =
+          [...gameweeks].reverse().find((gw) => gw.finished) ??
+          gameweeks[gameweeks.length - 1];
+        setCurrentGW(fallback);
+        setSelectedGW(fallback.id);
+        setIsOffSeason(true);
       }
+      setLoading(false);
     }
   }, [gameweeks]);
 
@@ -64,7 +74,7 @@ function App() {
       });
   }, [allPlayers, myPlayerIds, gwPlayerStats]);
 
-  const teams = useTeams();
+  const { teams, error: teamsError } = useTeams();
 
   // Fetch GW live stats only for the GWs we actually need:
   // transfer GWs (for alternatives) + history GWs (for GWHistory player cards).
@@ -75,10 +85,11 @@ function App() {
     return [...new Set([...transferGWs, ...historyGWs])];
   }, [myTransfers, gwHistory]);
 
-  const gwLiveStats = useGWLiveStats(neededGWIds);
+  const { gwLiveStats, error: gwLiveStatsError } = useGWLiveStats(neededGWIds);
+  const { historicalPrices, error: historicalPricesError } = useHistoricalPrices(neededGWIds);
 
-  // Build a price lookup from allPlayers (now_cost) used as a budget proxy
-  // when finding alternatives — GW live stats don't carry historical prices.
+  // Fallback price lookup from allPlayers (now_cost) — used only when
+  // historical prices are unavailable for a given GW/player.
   const allPlayersById = useMemo(
     () => allPlayers.reduce((acc, p) => { acc[p.id] = p; return acc; }, {}),
     [allPlayers]
@@ -90,6 +101,7 @@ function App() {
     const byPlayer = {};
     for (const [gwId, data] of Object.entries(gwLiveStats)) {
       const elements = data.elements ?? [];
+      const gwPrices = historicalPrices[gwId];
       for (const el of elements) {
         const id = el.id;
         if (!byPlayer[id]) byPlayer[id] = [];
@@ -97,20 +109,51 @@ function App() {
           element: id,
           round: Number(gwId),
           total_points: el.stats.total_points,
-          value: allPlayersById[id]?.now_cost ?? 0,
+          value: gwPrices?.[id] ?? allPlayersById[id]?.now_cost ?? 0,
           minutes: el.stats.minutes,
           goals_scored: el.stats.goals_scored,
         });
       }
     }
     return Object.values(byPlayer);
-  }, [gwLiveStats, allPlayersById]);
+  }, [gwLiveStats, allPlayersById, historicalPrices]);
+
+  const appErrors = [
+    gameweeksError && 'Gameweek data',
+    allPlayersError && 'Player data',
+    mgrDataError && 'Manager profile',
+    gwPlayerStatsError && 'Squad data',
+    transfersError && 'Transfer history',
+    gwHistoryError && 'Gameweek history',
+    teamsError && 'Team data',
+    gwLiveStatsError && 'Live stats',
+    historicalPricesError && 'Price data',
+  ].filter(Boolean);
 
   if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
         <div className="w-12 h-12 border-4 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
         <p className="text-slate-400 text-sm tracking-wide">Loading your data…</p>
+      </div>
+    );
+  }
+
+  if (appErrors.length > 0) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4 px-6">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 max-w-md w-full text-center">
+          <h2 className="text-white text-lg font-bold mb-2">Something went wrong</h2>
+          <p className="text-slate-400 text-sm mb-4">
+            Failed to load: {appErrors.join(', ')}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-xl px-6 py-3 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -133,6 +176,11 @@ function App() {
       >
         <div className="App">
           <Header />
+          {isOffSeason && (
+            <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm text-center px-4 py-2">
+              No active gameweek — showing most recent data
+            </div>
+          )}
           <Routes>
             <Route path="/" element={<HomePage setMgrId={setMgrId} />} />
             <Route

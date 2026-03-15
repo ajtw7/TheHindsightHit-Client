@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 export default function useGWPlayerStats(selectedGW, mgrId) {
   const [gwPlayerStats, setGWPlayerStats] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(
           `${process.env.REACT_APP_API_URL}/api/${mgrId}/gw-player-stats/${selectedGW}`
@@ -14,8 +16,9 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setGWPlayerStats(data);
-      } catch (error) {
-        console.error('Error fetching gw player stats', error);
+      } catch (err) {
+        console.error('Error fetching gw player stats', err);
+        setError(err.message || 'Failed to fetch squad data');
       } finally {
         setLoading(false);
       }
@@ -26,5 +29,5 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
     }
   }, [selectedGW, mgrId]);
 
-  return { gwPlayerStats, loading };
+  return { gwPlayerStats, loading, error };
 }

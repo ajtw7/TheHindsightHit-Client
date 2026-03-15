@@ -3,7 +3,7 @@ import useFixtures from './services/useFixtures';
 import { PlayerContext } from './services/context';
 
 export default function Fixtures() {
-  const fixtures = useFixtures();
+  const { fixtures, error: fixturesError } = useFixtures();
   const { currentGW, teams } = useContext(PlayerContext);
   const [selectedGW, setSelectedGW] = useState(null);
 
@@ -29,6 +29,12 @@ export default function Fixtures() {
   return (
     <div className="bg-slate-900 min-h-screen px-4 py-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold text-white mb-4">Fixtures</h1>
+
+      {fixturesError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4 text-center">
+          <p className="text-red-400 text-sm">Failed to load fixtures. Please try again later.</p>
+        </div>
+      )}
 
       <select
         value={effectiveGW ?? ''}
