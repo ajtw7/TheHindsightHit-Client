@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { cacheGet, cacheSet, TTL } from '../utils/cache';
+import concurrencyLimit from '../utils/concurrencyLimit';
 
 /**
  * Fetches GW live stats (all players' scores for a given gameweek) from
@@ -44,28 +45,22 @@ export default function useGWLiveStats(gwIds, currentGWId) {
         return;
       }
 
-      let hadError = false;
+      const tasks = uncached.map((gwId) => async () => {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/gw-live-stats/${gwId}`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        cache.current[gwId] = data;
+        const ttl = gwId === currentGWId ? TTL.GW_LIVE_CURRENT : TTL.GW_LIVE_FINISHED;
+        cacheSet(`gwLiveStats_${gwId}`, data, ttl);
+      });
 
-      await Promise.all(
-        uncached.map(async (gwId) => {
-          try {
-            const res = await fetch(
-              `${process.env.REACT_APP_API_URL}/api/gw-live-stats/${gwId}`
-            );
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            cache.current[gwId] = data;
-            // Current/live GW gets a short TTL; finished GWs never expire
-            const ttl = gwId === currentGWId ? TTL.GW_LIVE_CURRENT : TTL.GW_LIVE_FINISHED;
-            cacheSet(`gwLiveStats_${gwId}`, data, ttl);
-          } catch (err) {
-            console.error(`Failed to fetch GW ${gwId} live stats:`, err);
-            hadError = true;
-          }
-        })
-      );
+      const results = await concurrencyLimit(tasks, 3);
 
-      if (hadError) {
+      if (results.some((r) => r.status === 'rejected')) {
+        const failed = results.filter((r) => r.status === 'rejected');
+        failed.forEach((r) => console.error('Failed to fetch GW live stats:', r.reason));
         setError('Failed to load some live stats');
       }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { cacheGet, cacheSet, TTL } from '../utils/cache';
+import concurrencyLimit from '../utils/concurrencyLimit';
 
 /**
  * Fetches historical player prices per gameweek from /api/prices/:gwId.
@@ -43,26 +44,21 @@ export default function useHistoricalPrices(gwIds) {
         return;
       }
 
-      let hadError = false;
+      const tasks = uncached.map((gwId) => async () => {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/prices/${gwId}`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        cache.current[gwId] = data;
+        cacheSet(`prices_${gwId}`, data, TTL.PRICES);
+      });
 
-      await Promise.all(
-        uncached.map(async (gwId) => {
-          try {
-            const res = await fetch(
-              `${process.env.REACT_APP_API_URL}/api/prices/${gwId}`
-            );
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            cache.current[gwId] = data;
-            cacheSet(`prices_${gwId}`, data, TTL.PRICES);
-          } catch (err) {
-            console.error(`Failed to fetch GW ${gwId} prices:`, err);
-            hadError = true;
-          }
-        })
-      );
+      const results = await concurrencyLimit(tasks, 3);
 
-      if (hadError) {
+      if (results.some((r) => r.status === 'rejected')) {
+        const failed = results.filter((r) => r.status === 'rejected');
+        failed.forEach((r) => console.error('Failed to fetch GW prices:', r.reason));
         setError('Failed to load some price data');
       }
 

@@ -44,6 +44,7 @@ src/
 │   └── useTeams.js
 ├── utils/
 │   ├── cache.js            # Shared localStorage cache with TTL: cacheGet/cacheSet/initCache
+│   ├── concurrencyLimit.js # Async pool: runs N tasks at a time (used by GW data hooks)
 │   └── findAlternatives.js # Pure function: core "hindsight" logic — unit tested
 ├── Components/
 │   ├── Header.jsx
@@ -87,8 +88,11 @@ tab close, browser restart, and back-and-forth visits to/from the FPL app.
 1. `App.js` fetches gameweeks, allPlayers, mgrData, gwPlayerStats, transfers,
    and gwHistory.
 2. `neededGWIds` = union of transfer GW IDs and gwHistory GW IDs (typically ≤38).
-   `useGWLiveStats(neededGWIds, currentGW?.id)` fires one request per GW (replaces ~750 per-player calls).
-   `useHistoricalPrices(neededGWIds)` fetches accurate per-GW prices from the backend.
+   `useGWLiveStats` and `useHistoricalPrices` are **lazy-loaded** — they only fetch
+   when the user is on `/transfers` or `/gameweek-history` (controlled by `useLocation`).
+   On other pages, empty `[]` is passed so no GW-level requests fire.
+   Both hooks use a **concurrency limiter** (`src/utils/concurrencyLimit.js`) to fetch
+   at most 3 GWs at a time instead of all at once, preventing FPL rate-limit hits.
 3. `uniquePlayerHistories` is built in a `useMemo` from `gwLiveStats` + `historicalPrices`,
    preserving the existing `Array<Array<{element, round, total_points, value, minutes, goals_scored}>>`
    shape. `value` uses historical price when available, falling back to `now_cost`.
@@ -138,6 +142,7 @@ Test files live next to the code they test:
 |---|---|
 | `src/utils/findAlternatives.test.js` | Core alternatives logic — most thorough |
 | `src/utils/cache.test.js` | localStorage TTL cache: get/set, expiry, eviction, version busting |
+| `src/utils/concurrencyLimit.test.js` | Async pool: concurrency enforcement, ordering, error handling |
 | `src/services/useGWLiveStats.test.js` | Fetch, dual-layer cache (useRef + localStorage), error handling |
 | `src/services/useHistoricalPrices.test.js` | Fetch, dual-layer cache (useRef + localStorage), error handling |
 | `src/Transfers.test.jsx` | Full integration: modal open/close, correct alternatives |
@@ -175,6 +180,7 @@ At the end of every session, before pushing, Claude must update this file:
   - **How to test** — steps a reviewer can follow to verify the change works.
 - Keep the PR title short and in imperative mood (e.g. `Fix GW dropdown not updating fixtures`).
 - Reference any related issues or prior PRs where relevant.
+- **After pushing, always provide the PR title and full PR description in Markdown format** so the user can copy-paste it. Do this automatically — never wait to be asked.
 
 ---
 
@@ -228,6 +234,11 @@ At the end of every session, before pushing, Claude must update this file:
   - **Conditional TTL:** `useGWLiveStats` accepts `currentGWId` param — finished GWs never expire, current/live GW uses 5min TTL. Historical prices never expire (immutable data).
   - **TTL values:** gameweeks 4h, teams 24h, allPlayers 1h, mgrData 1h, gwPlayerStats 1h, transfers 30min, gwHistory 30min.
   - Added `cache.test.js` (7 test cases). Updated `useGWLiveStats.test.js` and `useHistoricalPrices.test.js` with localStorage hydration tests. All 65 tests pass.
+- **2026-03-16 — Session 8 (claude/review-claude-md-TziqO):**
+  - **Concurrency limiter:** created `src/utils/concurrencyLimit.js` — reusable async pool that runs N tasks at a time with `allSettled`-style results. Added `concurrencyLimit.test.js` (5 test cases).
+  - **Rate-limit fix:** replaced `Promise.all` in `useGWLiveStats` and `useHistoricalPrices` with `concurrencyLimit(tasks, 3)`. GW data now fetches 3 at a time instead of 30+ simultaneously.
+  - **Lazy-load GW data:** `useGWLiveStats` and `useHistoricalPrices` now receive empty `[]` when user is not on `/transfers` or `/gameweek-history` (detected via `useLocation`). GW-level API calls no longer fire on Profile or Fixtures pages.
+  - All 70 tests pass. Production build succeeds.
 
 ---
 
@@ -237,9 +248,10 @@ At the end of every session, before pushing, Claude must update this file:
 
 Remaining priorities (in order):
 
-1. **`REACT_APP_API_URL` missing guard** — if the env var is absent every fetch URL becomes `undefined/api/...`. Add a startup assertion with a clear message.
-2. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
-3. **GWHistory shows current-squad players only** — since `gwPlayerStats` now always uses `currentGW`, past-GW squad data is not available. If accurate historical lineups are needed, the backend must provide a picks endpoint per GW.
-4. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
-5. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
-6. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
+1. **Backend DB migration** — move remaining FPL-proxied endpoints to a database (like pricing already is). Would eliminate FPL rate-limiting at the root.
+2. **`REACT_APP_API_URL` missing guard** — if the env var is absent every fetch URL becomes `undefined/api/...`. Add a startup assertion with a clear message.
+3. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
+4. **GWHistory shows current-squad players only** — since `gwPlayerStats` now always uses `currentGW`, past-GW squad data is not available. If accurate historical lineups are needed, the backend must provide a picks endpoint per GW.
+5. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
+6. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
+7. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.

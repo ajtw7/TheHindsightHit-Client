@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import useGameweeks from './services/useGameweeks';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
@@ -85,17 +85,21 @@ function App() {
 
   const { teams, error: teamsError } = useTeams();
 
-  // Fetch GW live stats only for the GWs we actually need:
-  // transfer GWs (for alternatives) + history GWs (for GWHistory player cards).
-  // This replaces ~750 individual player-history calls with one call per GW.
+  // Only fetch GW-level data on pages that actually use it (Transfers, GW History).
+  // On other pages (Profile, Fixtures), pass empty arrays so the hooks skip fetching.
+  const location = useLocation();
+  const needsGWData = location.pathname.includes('/transfers') ||
+                      location.pathname.includes('/gameweek-history');
+
   const neededGWIds = useMemo(() => {
     const transferGWs = myTransfers.map((t) => t.event);
     const historyGWs = gwHistory.map((h) => h.event);
     return [...new Set([...transferGWs, ...historyGWs])];
   }, [myTransfers, gwHistory]);
 
-  const { gwLiveStats, error: gwLiveStatsError } = useGWLiveStats(neededGWIds, currentGW?.id);
-  const { historicalPrices, error: historicalPricesError } = useHistoricalPrices(neededGWIds);
+  const activeGWIds = needsGWData ? neededGWIds : [];
+  const { gwLiveStats, error: gwLiveStatsError } = useGWLiveStats(activeGWIds, currentGW?.id);
+  const { historicalPrices, error: historicalPricesError } = useHistoricalPrices(activeGWIds);
 
   // Fallback price lookup from allPlayers (now_cost) — used only when
   // historical prices are unavailable for a given GW/player.
