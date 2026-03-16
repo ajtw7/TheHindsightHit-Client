@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react';
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useGWHistory(mgrId) {
-  const [gwHistory, setGWHistory] = useState([]);
+  const [gwHistory, setGWHistory] = useState(() => {
+    if (!mgrId) return [];
+    return cacheGet(`gwHistory_${mgrId}`) ?? [];
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!mgrId) return;
+
+    // Skip fetch if we already have cached data for this manager
+    if (gwHistory.length > 0) {
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -16,6 +27,7 @@ export default function useGWHistory(mgrId) {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setGWHistory(data);
+        cacheSet(`gwHistory_${mgrId}`, data, TTL.GW_HISTORY);
       } catch (err) {
         console.error('Error fetching gw history', err);
         setError(err.message || 'Failed to fetch gameweek history');
@@ -23,12 +35,9 @@ export default function useGWHistory(mgrId) {
         setLoading(false);
       }
     };
-    if (mgrId) {
-      fetchData();
-    }
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mgrId]);
 
   return { gwHistory, loading, error };
 }
-
-// Path: src/services/useGWHistory.js

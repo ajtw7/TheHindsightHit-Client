@@ -17,7 +17,7 @@ budget.
 - **Backend:** Railway (API base URL: `https://thehindsighthit-server-production.up.railway.app`)
 - **Data grid:** `@mui/x-data-grid` v7 (themed via CSS class overrides — `@mui/material` is NOT installed)
 - **Routing:** React Router v6 (URL-based team ID: `/manager/:mgrId/profile`, etc.)
-- **Persistence:** `localStorage` for team ID; `sessionStorage` for API response caching
+- **Persistence:** `localStorage` for team ID + all API response caching (TTL-based via `src/utils/cache.js`)
 - **Icons:** lucide-react
 - **Testing:** Jest + React Testing Library (built into CRA)
 - **Deployment:** Netlify (`netlify.toml` present; SPA redirect rule configured)
@@ -43,6 +43,7 @@ src/
 │   ├── useFixtures.js
 │   └── useTeams.js
 ├── utils/
+│   ├── cache.js            # Shared localStorage cache with TTL: cacheGet/cacheSet/initCache
 │   └── findAlternatives.js # Pure function: core "hindsight" logic — unit tested
 ├── Components/
 │   ├── Header.jsx
@@ -70,16 +71,23 @@ Old flat URLs (`/manager-profile`, `/transfers`, etc.) redirect to the new struc
 
 ### Persistence & caching
 
+All API caching uses `localStorage` with TTL-based expiration via the shared
+`src/utils/cache.js` utility (`cacheGet`, `cacheSet`, `initCache`). Data survives
+tab close, browser restart, and back-and-forth visits to/from the FPL app.
+
 - **Team ID** persisted in `localStorage` — survives refresh and browser close. Cleared via "Switch Team" button.
-- **Gameweeks, allPlayers, teams** cached in `sessionStorage` — avoids re-fetching on navigation/refresh within the same tab. Cleared automatically on tab close.
-- **GW live stats + historical prices** cached in-memory via `useRef` (session-only, per-GW keyed).
+- **Gameweeks** (4h TTL), **allPlayers** (1h), **teams** (24h) — bootstrap data shared across all teams.
+- **mgrData** (1h), **gwPlayerStats** (1h), **transfers** (30min), **gwHistory** (30min) — keyed by `mgrId` (+ GW where applicable).
+- **GW live stats** — finished GWs never expire; current/live GW has 5min TTL. Dual-layer cache: `useRef` L1 (in-memory) + `localStorage` L2.
+- **Historical prices** — never expire (immutable). Same dual-layer cache as live stats.
+- **Cache versioning:** all keys prefixed `thh_v1_`. `initCache()` (called in `index.js`) clears stale keys when the version changes.
 
 ### Key data flow
 
 1. `App.js` fetches gameweeks, allPlayers, mgrData, gwPlayerStats, transfers,
    and gwHistory.
 2. `neededGWIds` = union of transfer GW IDs and gwHistory GW IDs (typically ≤38).
-   `useGWLiveStats(neededGWIds)` fires one request per GW (replaces ~750 per-player calls).
+   `useGWLiveStats(neededGWIds, currentGW?.id)` fires one request per GW (replaces ~750 per-player calls).
    `useHistoricalPrices(neededGWIds)` fetches accurate per-GW prices from the backend.
 3. `uniquePlayerHistories` is built in a `useMemo` from `gwLiveStats` + `historicalPrices`,
    preserving the existing `Array<Array<{element, round, total_points, value, minutes, goals_scored}>>`
@@ -129,8 +137,9 @@ Test files live next to the code they test:
 | File | What it covers |
 |---|---|
 | `src/utils/findAlternatives.test.js` | Core alternatives logic — most thorough |
-| `src/services/useGWLiveStats.test.js` | Fetch, cache, error handling for GW live stats |
-| `src/services/useHistoricalPrices.test.js` | Fetch, cache, error handling for historical prices |
+| `src/utils/cache.test.js` | localStorage TTL cache: get/set, expiry, eviction, version busting |
+| `src/services/useGWLiveStats.test.js` | Fetch, dual-layer cache (useRef + localStorage), error handling |
+| `src/services/useHistoricalPrices.test.js` | Fetch, dual-layer cache (useRef + localStorage), error handling |
 | `src/Transfers.test.jsx` | Full integration: modal open/close, correct alternatives |
 | `src/App.test.js` | Smoke test: renders without crashing |
 
@@ -208,12 +217,23 @@ At the end of every session, before pushing, Claude must update this file:
   - **sessionStorage caching:** `useGameweeks`, `useAllPlayers`, `useTeams` now read from `sessionStorage` on mount and skip the fetch if cached. Written after successful fetch. Cleared automatically on tab close.
   - **Nav + Header prop threading:** `mgrId` and `onSwitchTeam` passed from App → Header → Nav for dynamic link generation.
   - Updated `App.test.js` to use `MemoryRouter` and clear storage in `beforeEach`. All 52 tests pass.
+- **2026-03-16 — Session 6 (claude/review-claude-md-TziqO):**
+  - **Manager-specific sessionStorage caching:** added sessionStorage caching to `useMgrData`, `useGWPlayerStats`, `useTransfers`, and `useGWHistory`. On page refresh these hooks now return cached data instantly instead of firing four simultaneous API requests that get rate-limited by the FPL backend. Cache keys include `mgrId` (and GW where applicable); cache clears automatically on tab close.
+  - **Build fixes:** removed unused `useParams`/`useNavigate` imports from App.js (Netlify `CI=true` treats warnings as errors).
+
+- **2026-03-16 — Session 7 (claude/review-claude-md-TziqO):**
+  - **localStorage caching with TTL:** migrated all 9 service hooks from `sessionStorage` / `useRef`-only caching to persistent `localStorage` with TTL-based expiration. Data now survives tab close, browser restart, and back-and-forth visits to the FPL app — zero API calls needed for cached data.
+  - **Shared cache utility:** created `src/utils/cache.js` with `cacheGet` (read + TTL check), `cacheSet` (write + quota eviction), `initCache` (version-gated cleanup). All cache keys prefixed `thh_v1_` with version-busting on code changes.
+  - **Dual-layer caching for GW data:** `useGWLiveStats` and `useHistoricalPrices` now use `useRef` as L1 (in-memory, fastest) and `localStorage` as L2 (persistent). On mount, L1 is hydrated from L2 before fetching.
+  - **Conditional TTL:** `useGWLiveStats` accepts `currentGWId` param — finished GWs never expire, current/live GW uses 5min TTL. Historical prices never expire (immutable data).
+  - **TTL values:** gameweeks 4h, teams 24h, allPlayers 1h, mgrData 1h, gwPlayerStats 1h, transfers 30min, gwHistory 30min.
+  - Added `cache.test.js` (7 test cases). Updated `useGWLiveStats.test.js` and `useHistoricalPrices.test.js` with localStorage hydration tests. All 65 tests pass.
 
 ---
 
 ## What's Next
 
-*Last updated: 2026-03-15*
+*Last updated: 2026-03-16*
 
 Remaining priorities (in order):
 
