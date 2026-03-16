@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
-
-function cacheKey(mgrId) { return `cache_mgrData_${mgrId}`; }
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useMgrData(mgrId) {
   const [mgrData, setMgrData] = useState(() => {
     if (!mgrId) return {};
-    try {
-      const cached = sessionStorage.getItem(cacheKey(mgrId));
-      return cached ? JSON.parse(cached) : {};
-    } catch { return {}; }
+    return cacheGet(`mgrData_${mgrId}`) ?? {};
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,7 +27,7 @@ export default function useMgrData(mgrId) {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setMgrData(data);
-        try { sessionStorage.setItem(cacheKey(mgrId), JSON.stringify(data)); } catch {}
+        cacheSet(`mgrData_${mgrId}`, data, TTL.MGR_DATA);
       } catch (err) {
         console.error('Error fetching manager data', err);
         setError(err.message || 'Failed to fetch manager data');

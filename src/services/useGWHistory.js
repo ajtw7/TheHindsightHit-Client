@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
-
-function cacheKey(mgrId) { return `cache_gwHistory_${mgrId}`; }
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useGWHistory(mgrId) {
   const [gwHistory, setGWHistory] = useState(() => {
     if (!mgrId) return [];
-    try {
-      const cached = sessionStorage.getItem(cacheKey(mgrId));
-      return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
+    return cacheGet(`gwHistory_${mgrId}`) ?? [];
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,7 +27,7 @@ export default function useGWHistory(mgrId) {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setGWHistory(data);
-        try { sessionStorage.setItem(cacheKey(mgrId), JSON.stringify(data)); } catch {}
+        cacheSet(`gwHistory_${mgrId}`, data, TTL.GW_HISTORY);
       } catch (err) {
         console.error('Error fetching gw history', err);
         setError(err.message || 'Failed to fetch gameweek history');

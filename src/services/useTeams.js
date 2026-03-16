@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
-const CACHE_KEY = 'cache_teams';
+const CACHE_KEY = 'teams';
 
 export default function useTeams() {
-  const [teams, setTeams] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
-  });
+  const [teams, setTeams] = useState(() => cacheGet(CACHE_KEY) ?? []);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -20,7 +16,7 @@ export default function useTeams() {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setTeams(data);
-        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+        cacheSet(CACHE_KEY, data, TTL.TEAMS);
       } catch (err) {
         console.error('Error fetching teams', err);
         setError(err.message || 'Failed to fetch teams');

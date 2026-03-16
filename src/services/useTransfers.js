@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
-
-function cacheKey(mgrId) { return `cache_transfers_${mgrId}`; }
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useTransfers(mgrId) {
   const [myTransfers, setMyTransfers] = useState(() => {
     if (!mgrId) return [];
-    try {
-      const cached = sessionStorage.getItem(cacheKey(mgrId));
-      return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
+    return cacheGet(`transfers_${mgrId}`) ?? [];
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -29,7 +25,7 @@ export default function useTransfers(mgrId) {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setMyTransfers(data);
-        try { sessionStorage.setItem(cacheKey(mgrId), JSON.stringify(data)); } catch {}
+        cacheSet(`transfers_${mgrId}`, data, TTL.TRANSFERS);
       } catch (err) {
         console.error('Error fetching transfers', err);
         setError(err.message || 'Failed to fetch transfers');

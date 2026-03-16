@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
-const CACHE_KEY = 'cache_allPlayers';
+const CACHE_KEY = 'allPlayers';
 
 export default function useAllPlayers() {
-  const [allPlayers, setAllPlayers] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
-  });
+  const [allPlayers, setAllPlayers] = useState(() => cacheGet(CACHE_KEY) ?? []);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -20,7 +16,7 @@ export default function useAllPlayers() {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setAllPlayers(data);
-        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+        cacheSet(CACHE_KEY, data, TTL.ALL_PLAYERS);
       } catch (err) {
         console.error('Error fetching players', err);
         setError(err.message || 'Failed to fetch players');

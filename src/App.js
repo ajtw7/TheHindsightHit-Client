@@ -94,7 +94,7 @@ function App() {
     return [...new Set([...transferGWs, ...historyGWs])];
   }, [myTransfers, gwHistory]);
 
-  const { gwLiveStats, error: gwLiveStatsError } = useGWLiveStats(neededGWIds);
+  const { gwLiveStats, error: gwLiveStatsError } = useGWLiveStats(neededGWIds, currentGW?.id);
   const { historicalPrices, error: historicalPricesError } = useHistoricalPrices(neededGWIds);
 
   // Fallback price lookup from allPlayers (now_cost) — used only when

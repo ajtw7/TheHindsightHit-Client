@@ -5,6 +5,7 @@ const mockGW5Prices = { '1': 55, '2': 80, '3': 100 };
 const mockGW6Prices = { '1': 60, '2': 80, '3': 95 };
 
 beforeEach(() => {
+  localStorage.clear();
   global.fetch = jest.fn();
 });
 
@@ -67,4 +68,27 @@ test('caches results and does not re-fetch on re-render', async () => {
   rerender({ ids: [5] });
   await waitFor(() => expect(result.current.historicalPrices[5]).toBeDefined());
   expect(global.fetch).toHaveBeenCalledTimes(1);
+});
+
+test('hydrates from localStorage and skips fetch for cached GWs', async () => {
+  // Pre-populate localStorage with GW 5 data
+  localStorage.setItem(
+    'thh_v1_prices_5',
+    JSON.stringify({ d: mockGW5Prices, e: 0 })
+  );
+
+  // Only GW 6 should be fetched
+  global.fetch.mockImplementation((url) => {
+    if (url.includes('/6')) return Promise.resolve({ ok: true, json: () => Promise.resolve(mockGW6Prices) });
+    return Promise.reject(new Error('Should not fetch GW 5'));
+  });
+
+  const { result } = renderHook(() => useHistoricalPrices([5, 6]));
+
+  await waitFor(() => expect(Object.keys(result.current.historicalPrices).length).toBe(2));
+
+  expect(result.current.historicalPrices[5]).toEqual(mockGW5Prices);
+  expect(result.current.historicalPrices[6]).toEqual(mockGW6Prices);
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+  expect(global.fetch.mock.calls[0][0]).toContain('/6');
 });

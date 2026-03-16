@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
-
-function cacheKey(mgrId, gw) { return `cache_gwPlayerStats_${mgrId}_${gw}`; }
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useGWPlayerStats(selectedGW, mgrId) {
   const [gwPlayerStats, setGWPlayerStats] = useState(() => {
     if (!selectedGW || !mgrId) return [];
-    try {
-      const cached = sessionStorage.getItem(cacheKey(mgrId, selectedGW));
-      return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
+    return cacheGet(`gwPlayerStats_${mgrId}_${selectedGW}`) ?? [];
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,11 +13,9 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
     if (!selectedGW || !mgrId) return;
 
     // Skip fetch if we already have cached data for this GW + manager
-    if (gwPlayerStats.length > 0) {
-      const ck = cacheKey(mgrId, selectedGW);
-      try {
-        if (sessionStorage.getItem(ck)) return;
-      } catch {}
+    const key = `gwPlayerStats_${mgrId}_${selectedGW}`;
+    if (gwPlayerStats.length > 0 && cacheGet(key)) {
+      return;
     }
 
     const fetchData = async () => {
@@ -34,7 +28,7 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setGWPlayerStats(data);
-        try { sessionStorage.setItem(cacheKey(mgrId, selectedGW), JSON.stringify(data)); } catch {}
+        cacheSet(key, data, TTL.GW_STATS);
       } catch (err) {
         console.error('Error fetching gw player stats', err);
         setError(err.message || 'Failed to fetch squad data');

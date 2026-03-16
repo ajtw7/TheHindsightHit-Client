@@ -1,19 +1,15 @@
 import { useState, useEffect } from 'react';
+import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
-const CACHE_KEY = 'cache_gameweeks';
+const CACHE_KEY = 'gameweeks';
 
 export default function useGameweeks() {
-  const [gameweeks, setGameweeks] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
-  });
+  const [gameweeks, setGameweeks] = useState(() => cacheGet(CACHE_KEY) ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Skip fetch if we already have cached data from sessionStorage
+    // Skip fetch if we already have cached data
     if (gameweeks.length > 0) {
       setLoading(false);
       return;
@@ -25,7 +21,7 @@ export default function useGameweeks() {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setGameweeks(data);
-        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+        cacheSet(CACHE_KEY, data, TTL.GAMEWEEKS);
       } catch (err) {
         console.error('Error fetching gameweeks.', err);
         setError(err.message || 'Failed to fetch gameweeks');
