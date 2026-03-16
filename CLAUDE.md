@@ -180,6 +180,7 @@ At the end of every session, before pushing, Claude must update this file:
   - **How to test** — steps a reviewer can follow to verify the change works.
 - Keep the PR title short and in imperative mood (e.g. `Fix GW dropdown not updating fixtures`).
 - Reference any related issues or prior PRs where relevant.
+- **After pushing, always provide the PR title and full PR description in Markdown format** so the user can copy-paste it. Do this automatically — never wait to be asked.
 
 ---
 
