@@ -9,6 +9,12 @@ import './index.css';
 
 initCache();
 
+if (!process.env.REACT_APP_API_URL) {
+  throw new Error(
+    'REACT_APP_API_URL is not set. Copy .env.example to .env.local and fill in the API base URL.'
+  );
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
