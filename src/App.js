@@ -139,6 +139,10 @@ function App() {
     historicalPricesError && 'Price data',
   ].filter(Boolean);
 
+  const handleSwitchTeam = useCallback(() => {
+    setMgrId(null);
+  }, []);
+
   if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
@@ -166,10 +170,6 @@ function App() {
       </div>
     );
   }
-
-  const handleSwitchTeam = useCallback(() => {
-    setMgrId(null);
-  }, []);
 
   if (mgrId === null) {
     return (
