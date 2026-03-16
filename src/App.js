@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import useGameweeks from './services/useGameweeks';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
