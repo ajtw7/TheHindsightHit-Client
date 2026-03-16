@@ -1,18 +1,26 @@
 import { useContext, useMemo } from 'react';
 import { SelectedGWContext, PlayerContext } from './services/context';
+import useGWPicks from './services/useGWPicks';
 
-export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTransfers }) {
+export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTransfers, mgrId }) {
   const { selectedGW } = useContext(SelectedGWContext);
-  const { allPlayers, myPlayerIds, uniquePlayerHistories } = useContext(PlayerContext);
+  const { allPlayers, uniquePlayerHistories } = useContext(PlayerContext);
+
+  // Fetch the actual squad for the selected GW (not the current squad)
+  const { picks: gwPicks, loading: picksLoading } = useGWPicks(selectedGW, mgrId);
+  const gwPlayerIds = useMemo(
+    () => gwPicks.map((p) => p.element),
+    [gwPicks]
+  );
 
   const selectedGWTransfers = myTransfers.filter(
     (transfer) => transfer.event === selectedGW
   );
 
-  // Filter the shared pool down to only this manager's players — no extra fetches
+  // Filter the shared pool down to players from the selected GW's squad
   const myUniquePlayerHistories = useMemo(
-    () => uniquePlayerHistories.filter((ph) => ph[0] && myPlayerIds.includes(ph[0].element)),
-    [uniquePlayerHistories, myPlayerIds]
+    () => uniquePlayerHistories.filter((ph) => ph[0] && gwPlayerIds.includes(ph[0].element)),
+    [uniquePlayerHistories, gwPlayerIds]
   );
 
   return (
@@ -48,12 +56,17 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
 
       {/* Player cards */}
       <h2 className="text-base font-semibold text-slate-300 mb-3">Players</h2>
+      {picksLoading && (
+        <div className="flex justify-center py-4">
+          <div className="w-6 h-6 border-2 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 mb-6">
         {myUniquePlayerHistories.map((playerHistory) =>
           playerHistory
             .filter((gwData) => gwData.round === selectedGW)
             .map((gwData) => {
-              const player = myPlayers.find((p) => p.id === gwData.element);
+              const player = allPlayers.find((p) => p.id === gwData.element);
               if (!player) return null;
               return (
                 <div
@@ -85,7 +98,7 @@ export default function GWHistory({ gwHistory, myPlayers, setSelectedGW, myTrans
           <h2 className="text-base font-semibold text-slate-300 mb-3">Transfers</h2>
           <div className="space-y-2">
             {selectedGWTransfers.map((transfer) => {
-              const playerIn = myPlayers.find((p) => p.id === transfer.element_in);
+              const playerIn = allPlayers.find((p) => p.id === transfer.element_in);
               const playerOut = allPlayers.find((p) => p.id === transfer.element_out);
               return (
                 <div

@@ -36,6 +36,7 @@ src/
 │   ├── useAllPlayers.js
 │   ├── useMgrData.js
 │   ├── useGWPlayerStats.js
+│   ├── useGWPicks.js                  # Fetches squad picks for a specific GW (used by GWHistory)
 │   ├── useTransfers.js
 │   ├── useGWHistory.js
 │   ├── useGWLiveStats.js              # Fetches all-player stats per GW; in-memory cache via useRef
@@ -145,6 +146,7 @@ Test files live next to the code they test:
 | `src/utils/concurrencyLimit.test.js` | Async pool: concurrency enforcement, ordering, error handling |
 | `src/services/useGWLiveStats.test.js` | Fetch, dual-layer cache (useRef + localStorage), error handling |
 | `src/services/useHistoricalPrices.test.js` | Fetch, dual-layer cache (useRef + localStorage), error handling |
+| `src/services/useGWPicks.test.js` | Fetch, null-param guard, cache hit, error handling |
 | `src/Transfers.test.jsx` | Full integration: modal open/close, correct alternatives |
 | `src/App.test.js` | Smoke test: renders without crashing |
 
@@ -239,6 +241,10 @@ At the end of every session, before pushing, Claude must update this file:
   - **Rate-limit fix:** replaced `Promise.all` in `useGWLiveStats` and `useHistoricalPrices` with `concurrencyLimit(tasks, 3)`. GW data now fetches 3 at a time instead of 30+ simultaneously.
   - **Lazy-load GW data:** `useGWLiveStats` and `useHistoricalPrices` now receive empty `[]` when user is not on `/transfers` or `/gameweek-history` (detected via `useLocation`). GW-level API calls no longer fire on Profile or Fixtures pages.
   - All 70 tests pass. Production build succeeds.
+- **2026-03-16 — Session 9 (claude/review-claude-md-TziqO):**
+  - **`REACT_APP_API_URL` startup guard:** added a throw in `index.js` before render if the env var is missing. Provides a clear error message pointing to `.env.example`.
+  - **Historical GW lineups in GWHistory:** created `useGWPicks` hook that fetches the manager's actual squad for any GW via the existing `/api/{mgrId}/gw-player-stats/{gwId}` endpoint. GWHistory now shows the squad that was active for the selected GW (not the current squad). Player lookups use `allPlayers` instead of `myPlayers` so transferred-out players are still resolved. Added loading spinner while picks load.
+  - Added `useGWPicks.test.js` (4 test cases: fetch, null params, cache hit, error). All 74 tests pass. Production build succeeds.
 
 ---
 
@@ -249,9 +255,7 @@ At the end of every session, before pushing, Claude must update this file:
 Remaining priorities (in order):
 
 1. **Backend DB migration** — move remaining FPL-proxied endpoints to a database (like pricing already is). Would eliminate FPL rate-limiting at the root.
-2. **`REACT_APP_API_URL` missing guard** — if the env var is absent every fetch URL becomes `undefined/api/...`. Add a startup assertion with a clear message.
-3. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
-4. **GWHistory shows current-squad players only** — since `gwPlayerStats` now always uses `currentGW`, past-GW squad data is not available. If accurate historical lineups are needed, the backend must provide a picks endpoint per GW.
-5. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
-6. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
-7. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
+2. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
+3. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
+4. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
+5. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.

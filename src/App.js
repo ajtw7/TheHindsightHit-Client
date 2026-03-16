@@ -218,6 +218,7 @@ function App() {
                   myPlayers={myPlayers}
                   setSelectedGW={setSelectedGW}
                   myTransfers={myTransfers}
+                  mgrId={mgrId}
                 />
               }
             />
