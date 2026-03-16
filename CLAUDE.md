@@ -72,6 +72,7 @@ Old flat URLs (`/manager-profile`, `/transfers`, etc.) redirect to the new struc
 
 - **Team ID** persisted in `localStorage` — survives refresh and browser close. Cleared via "Switch Team" button.
 - **Gameweeks, allPlayers, teams** cached in `sessionStorage` — avoids re-fetching on navigation/refresh within the same tab. Cleared automatically on tab close.
+- **mgrData, gwPlayerStats, transfers, gwHistory** cached in `sessionStorage` keyed by `mgrId` (+ GW where applicable) — prevents rate-limiting on page refresh.
 - **GW live stats + historical prices** cached in-memory via `useRef` (session-only, per-GW keyed).
 
 ### Key data flow
@@ -208,12 +209,15 @@ At the end of every session, before pushing, Claude must update this file:
   - **sessionStorage caching:** `useGameweeks`, `useAllPlayers`, `useTeams` now read from `sessionStorage` on mount and skip the fetch if cached. Written after successful fetch. Cleared automatically on tab close.
   - **Nav + Header prop threading:** `mgrId` and `onSwitchTeam` passed from App → Header → Nav for dynamic link generation.
   - Updated `App.test.js` to use `MemoryRouter` and clear storage in `beforeEach`. All 52 tests pass.
+- **2026-03-16 — Session 6 (claude/review-claude-md-TziqO):**
+  - **Manager-specific sessionStorage caching:** added sessionStorage caching to `useMgrData`, `useGWPlayerStats`, `useTransfers`, and `useGWHistory`. On page refresh these hooks now return cached data instantly instead of firing four simultaneous API requests that get rate-limited by the FPL backend. Cache keys include `mgrId` (and GW where applicable); cache clears automatically on tab close.
+  - **Build fixes:** removed unused `useParams`/`useNavigate` imports from App.js (Netlify `CI=true` treats warnings as errors).
 
 ---
 
 ## What's Next
 
-*Last updated: 2026-03-15*
+*Last updated: 2026-03-16*
 
 Remaining priorities (in order):
 
