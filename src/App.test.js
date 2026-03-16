@@ -1,11 +1,16 @@
 import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
+
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
 
 test('renders without crashing', () => {
   render(
-    <BrowserRouter>
+    <MemoryRouter initialEntries={['/']}>
       <App />
-    </BrowserRouter>
+    </MemoryRouter>
   );
 });

@@ -16,7 +16,8 @@ budget.
 - **Styling:** Tailwind CSS v3 (via CRACO), dark slate/emerald palette
 - **Backend:** Railway (API base URL: `https://thehindsighthit-server-production.up.railway.app`)
 - **Data grid:** `@mui/x-data-grid` v7 (themed via CSS class overrides — `@mui/material` is NOT installed)
-- **Routing:** React Router v6
+- **Routing:** React Router v6 (URL-based team ID: `/manager/:mgrId/profile`, etc.)
+- **Persistence:** `localStorage` for team ID; `sessionStorage` for API response caching
 - **Icons:** lucide-react
 - **Testing:** Jest + React Testing Library (built into CRA)
 - **Deployment:** Netlify (`netlify.toml` present; SPA redirect rule configured)
@@ -45,7 +46,7 @@ src/
 │   └── findAlternatives.js # Pure function: core "hindsight" logic — unit tested
 ├── Components/
 │   ├── Header.jsx
-│   ├── Nav.jsx             # Mobile burger + desktop nav; active link in emerald
+│   ├── Nav.jsx             # Mobile burger + desktop nav; active link in emerald; Switch Team button
 │   ├── Logo.jsx
 │   └── ErrorBoundary.jsx
 ├── HomePage.jsx
@@ -54,6 +55,24 @@ src/
 ├── Transfers.jsx           # Key page; Show Alternatives bottom-sheet modal
 └── Fixtures.jsx
 ```
+
+### Routing
+
+| URL pattern | Component | Notes |
+|---|---|---|
+| `/` | `HomePage` | Team ID entry; redirects to `/manager/:id/profile` on submit |
+| `/manager/:mgrId/profile` | `ManagerProfile` | Squad display (current GW) |
+| `/manager/:mgrId/gameweek-history` | `GWHistory` | Past GW analysis |
+| `/manager/:mgrId/fixtures` | `Fixtures` | Upcoming fixtures |
+| `/manager/:mgrId/transfers` | `Transfers` | Transfer analysis & alternatives |
+
+Old flat URLs (`/manager-profile`, `/transfers`, etc.) redirect to the new structure.
+
+### Persistence & caching
+
+- **Team ID** persisted in `localStorage` — survives refresh and browser close. Cleared via "Switch Team" button.
+- **Gameweeks, allPlayers, teams** cached in `sessionStorage` — avoids re-fetching on navigation/refresh within the same tab. Cleared automatically on tab close.
+- **GW live stats + historical prices** cached in-memory via `useRef` (session-only, per-GW keyed).
 
 ### Key data flow
 
@@ -182,6 +201,13 @@ At the end of every session, before pushing, Claude must update this file:
   - **Off-season loading fix:** App.js now falls back to the last finished GW when no `is_current` gameweek exists, preventing infinite loading spinner. Shows amber banner when in off-season mode.
   - **Error state UI:** all 10 hooks now expose `error` state. App.js aggregates errors and renders a full-page error screen with "Try Again" button. Fixtures.jsx shows inline error banner. Hooks that previously returned bare values (`useAllPlayers`, `useTeams`, `useGWLiveStats`, `useFixtures`) now return `{ value, error }` objects.
   - Updated `useGWLiveStats.test.js` for new return shape. All 52 tests pass.
+- **2026-03-15 — Session 5 (claude/review-claude-md-TziqO):**
+  - **Session persistence:** `mgrId` now stored in `localStorage` — page refresh no longer loses the team. Read back on mount via `useState` lazy initialiser.
+  - **URL-based team routing:** routes changed from flat (`/transfers`) to `/manager/:mgrId/transfers`. URLs are shareable and bookmarkable. Old flat URLs redirect to the new structure.
+  - **Switch Team button:** added to Nav (desktop: icon button, mobile: labelled button in burger menu). Clears localStorage and navigates back to HomePage.
+  - **sessionStorage caching:** `useGameweeks`, `useAllPlayers`, `useTeams` now read from `sessionStorage` on mount and skip the fetch if cached. Written after successful fetch. Cleared automatically on tab close.
+  - **Nav + Header prop threading:** `mgrId` and `onSwitchTeam` passed from App → Header → Nav for dynamic link generation.
+  - Updated `App.test.js` to use `MemoryRouter` and clear storage in `beforeEach`. All 52 tests pass.
 
 ---
 
@@ -194,4 +220,6 @@ Remaining priorities (in order):
 1. **`REACT_APP_API_URL` missing guard** — if the env var is absent every fetch URL becomes `undefined/api/...`. Add a startup assertion with a clear message.
 2. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
 3. **GWHistory shows current-squad players only** — since `gwPlayerStats` now always uses `currentGW`, past-GW squad data is not available. If accurate historical lineups are needed, the backend must provide a picks endpoint per GW.
-4. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
+4. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
+5. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
+6. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
