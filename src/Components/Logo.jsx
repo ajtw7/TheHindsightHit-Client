@@ -4,7 +4,7 @@ const Logo = () => {
   return (
     <Link to="/">
       <img
-        src={`${process.env.PUBLIC_URL}/thh-logo.svg`}
+        src={`${process.env.PUBLIC_URL}/THH—Vector_v1.png`}
         alt="The Hindsight Hit — FPL Transfer Analytics"
         className="h-9 md:h-12 w-auto transition-opacity duration-150 ease-in hover:opacity-[0.85]"
       />
