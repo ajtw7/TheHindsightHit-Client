@@ -182,7 +182,7 @@ At the end of every session, before pushing, Claude must update this file:
   - **How to test** — steps a reviewer can follow to verify the change works.
 - Keep the PR title short and in imperative mood (e.g. `Fix GW dropdown not updating fixtures`).
 - Reference any related issues or prior PRs where relevant.
-- **After pushing, always provide the PR title and full PR description in Markdown format** so the user can copy-paste it. Do this automatically — never wait to be asked.
+- **After pushing, always provide the PR title and full PR description inside a fenced markdown code block** (` ```markdown `) so the user can copy-paste it verbatim. Do this automatically — never wait to be asked.
 
 ---
 
@@ -245,17 +245,18 @@ At the end of every session, before pushing, Claude must update this file:
   - **`REACT_APP_API_URL` startup guard:** added a throw in `index.js` before render if the env var is missing. Provides a clear error message pointing to `.env.example`.
   - **Historical GW lineups in GWHistory:** created `useGWPicks` hook that fetches the manager's actual squad for any GW via the existing `/api/{mgrId}/gw-player-stats/{gwId}` endpoint. GWHistory now shows the squad that was active for the selected GW (not the current squad). Player lookups use `allPlayers` instead of `myPlayers` so transferred-out players are still resolved. Added loading spinner while picks load.
   - Added `useGWPicks.test.js` (4 test cases: fetch, null params, cache hit, error). All 74 tests pass. Production build succeeds.
+- **2026-03-17 — Session 10 (claude/review-claude-md-eXf2v):**
+  - **Player headshots in profile modal:** `PlayerModal` in `ManagerProfile.jsx` now renders the player's headshot using `player.code` to build the FPL CDN URL (`https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`). Image is hidden via `onError` if the CDN returns a 404. Photo sits inline with the position badge, name, and team name in the modal header.
 
 ---
 
 ## What's Next
 
-*Last updated: 2026-03-16*
+*Last updated: 2026-03-17*
 
 Remaining priorities (in order):
 
 1. **Backend DB migration** — move remaining FPL-proxied endpoints to a database (like pricing already is). Would eliminate FPL rate-limiting at the root.
-2. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
-3. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
-4. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
-5. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
+2. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
+3. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
+4. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
