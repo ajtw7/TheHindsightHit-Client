@@ -253,6 +253,10 @@ At the end of every session, before pushing, Claude must update this file:
   - **Transfer impact breakdown (FIX 3):** Replaced single-badge impact display in `Transfers.jsx` with a full panel showing playerIn points since transfer, playerOut points since transfer, and net impact with ▲/▼ arrow. Colours: `#00E87A` positive, `#ef4444` negative, `rgba(255,255,255,0.5)` zero. Typography: 10px label, 13px rows, 14px bold net.
   - All 70 tests pass throughout. Production build succeeds (`CI=true`).
 
+- **2026-03-18 — Polish fixes (claude/add-logo-to-header):**
+  - **Transfer impact label:** header in the impact breakdown panel now reads "POINTS SINCE GW N" (e.g. "POINTS SINCE GW 29") using `transfer.impact.gameweek` with `transfer.event` as fallback.
+  - **Stale mgrId cleanup:** `initCache()` now calls `localStorage.removeItem('mgrId')` on every startup, purging the plain key written by old code that used localStorage as source of truth. Prevents ghost API calls on cold load after upgrading from a cached old build.
+
 ---
 
 ## What's Next

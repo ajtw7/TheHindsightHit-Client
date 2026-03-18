@@ -8,6 +8,11 @@ const VERSION_KEY = 'thh_cacheVersion';
  */
 export function initCache() {
   try {
+    // One-time cleanup: remove the plain 'mgrId' key written by old code
+    // that used localStorage as the source of truth for the active team.
+    // The app now reads mgrId exclusively from the URL.
+    localStorage.removeItem('mgrId');
+
     const stored = localStorage.getItem(VERSION_KEY);
     if (stored !== CACHE_VERSION) {
       const keysToRemove = [];

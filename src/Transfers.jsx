@@ -169,7 +169,7 @@ export default function Transfers({ myTransfers, mgrId }) {
                   return (
                     <div className="bg-slate-700/30 rounded-xl px-3 py-2.5 mb-3">
                       <p className="uppercase font-semibold tracking-wide mb-1.5" style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
-                        Points since transfer
+                        Points since GW {transfer.impact.gameweek ?? transfer.event}
                       </p>
                       <div className="flex items-center justify-between" style={{ fontSize: '13px' }}>
                         <div className="flex items-center gap-1.5">
