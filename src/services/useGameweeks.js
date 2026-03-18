@@ -3,18 +3,21 @@ import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 const CACHE_KEY = 'gameweeks';
 
-export default function useGameweeks() {
+export default function useGameweeks(enabled = true) {
   const [gameweeks, setGameweeks] = useState(() => cacheGet(CACHE_KEY) ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) { setLoading(false); return; }
+
     // Skip fetch if we already have cached data
     if (gameweeks.length > 0) {
       setLoading(false);
       return;
     }
 
+    setLoading(true);
     const fetchGameweekData = async () => {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/gameweeks`);
@@ -31,7 +34,7 @@ export default function useGameweeks() {
     };
     fetchGameweekData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   return { gameweeks, loading, error };
 }

@@ -21,12 +21,6 @@ import { ProfileSkeleton, GWHistorySkeleton } from './Components/Skeleton';
 import './styles/App.css';
 
 function App() {
-  const { gameweeks, error: gameweeksError } = useGameweeks();
-  const [currentGW, setCurrentGW] = useState(null);
-  const [selectedGW, setSelectedGW] = useState(currentGW);
-  const [loading, setLoading] = useState(true);
-  const [isOffSeason, setIsOffSeason] = useState(false);
-  const [errorBanner, setErrorBanner] = useState(null);
   const navigate = useNavigate();
 
   // URL is the single source of truth for managerId.
@@ -37,6 +31,17 @@ function App() {
   // mgrId = URL param when on a /manager/ route, otherwise null.
   // localStorage is only used as a fetch-cache key, never as source of truth.
   const mgrId = urlMgrId;
+  const hasMgrId = !!mgrId;
+
+  // Bootstrap hooks — only fetch when a manager ID is present.
+  // Cache hydration (useState initialiser) still runs on mount so
+  // cached data is available instantly when the user submits a team ID.
+  const { gameweeks, error: gameweeksError } = useGameweeks(hasMgrId);
+  const [currentGW, setCurrentGW] = useState(null);
+  const [selectedGW, setSelectedGW] = useState(currentGW);
+  const [loading, setLoading] = useState(true);
+  const [isOffSeason, setIsOffSeason] = useState(false);
+  const [errorBanner, setErrorBanner] = useState(null);
 
   // Setter used by HomePage to navigate (not to set state directly)
   const setMgrId = useCallback((id) => {
@@ -58,7 +63,7 @@ function App() {
     }
   }, [mgrDataError, navigate]);
 
-  const { allPlayers, error: allPlayersError } = useAllPlayers();
+  const { allPlayers, error: allPlayersError } = useAllPlayers(hasMgrId);
   const { gwPlayerStats, loading: gwPlayerStatsLoading, error: gwPlayerStatsError } = useGWPlayerStats(
     currentGW?.id,
     mgrId
@@ -101,7 +106,7 @@ function App() {
       });
   }, [allPlayers, myPlayerIds, gwPlayerStats]);
 
-  const { teams, error: teamsError } = useTeams();
+  const { teams, error: teamsError } = useTeams(hasMgrId);
 
   const location = useLocation();
   const onTransfersPage = location.pathname.includes('/transfers');
