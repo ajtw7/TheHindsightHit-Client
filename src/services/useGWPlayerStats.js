@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useGWPlayerStats(selectedGW, mgrId) {
@@ -8,13 +8,25 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const prevKey = useRef(`${mgrId}_${selectedGW}`);
 
   useEffect(() => {
     if (!selectedGW || !mgrId) return;
 
-    // Skip fetch if we already have cached data for this GW + manager
     const key = `gwPlayerStats_${mgrId}_${selectedGW}`;
-    if (gwPlayerStats.length > 0 && cacheGet(key)) {
+    const currentKey = `${mgrId}_${selectedGW}`;
+
+    // When params change, reset state and try cache
+    if (prevKey.current !== currentKey) {
+      prevKey.current = currentKey;
+      setError(null);
+      const cached = cacheGet(key);
+      if (cached) {
+        setGWPlayerStats(cached);
+        return;
+      }
+      setGWPlayerStats([]);
+    } else if (gwPlayerStats.length > 0 && cacheGet(key)) {
       return;
     }
 
@@ -25,8 +37,19 @@ export default function useGWPlayerStats(selectedGW, mgrId) {
         const res = await fetch(
           `${process.env.REACT_APP_API_URL}/api/${mgrId}/gw-player-stats/${selectedGW}`
         );
-        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          if (body.error && body.code) {
+            setError({ code: body.code, message: body.message });
+            return;
+          }
+          throw new Error(`HTTP error: ${res.status}`);
+        }
         const data = await res.json();
+        if (data.error === true && data.code) {
+          setError({ code: data.code, message: data.message });
+          return;
+        }
         setGWPlayerStats(data);
         cacheSet(key, data, TTL.GW_STATS);
       } catch (err) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useTransferImpact(mgrId) {
@@ -8,10 +8,28 @@ export default function useTransferImpact(mgrId) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const prevMgrId = useRef(mgrId);
 
   useEffect(() => {
-    if (!mgrId) return;
-    if (transferImpact) return;
+    if (!mgrId) {
+      setTransferImpact(null);
+      setError(null);
+      return;
+    }
+
+    // When mgrId changes, reset state and try cache for the new ID
+    if (prevMgrId.current !== mgrId) {
+      prevMgrId.current = mgrId;
+      setError(null);
+      const cached = cacheGet(`transfer_impact_${mgrId}`);
+      if (cached) {
+        setTransferImpact(cached);
+        return;
+      }
+      setTransferImpact(null);
+    } else if (transferImpact) {
+      return;
+    }
 
     const fetchData = async () => {
       setLoading(true);
@@ -20,8 +38,10 @@ export default function useTransferImpact(mgrId) {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/${mgrId}/transfer-impact`);
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
-        setTransferImpact(data);
-        cacheSet(`transfer_impact_${mgrId}`, data, TTL.TRANSFERS);
+        // API returns { transfers: [...] }
+        const transfers = data.transfers ?? data;
+        setTransferImpact(transfers);
+        cacheSet(`transfer_impact_${mgrId}`, transfers, TTL.TRANSFERS);
       } catch (err) {
         console.error('Error fetching transfer impact', err);
         setError(err.message || 'Failed to fetch transfer impact');

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 export default function useMgrData(mgrId) {
@@ -8,12 +8,26 @@ export default function useMgrData(mgrId) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const prevMgrId = useRef(mgrId);
 
   useEffect(() => {
-    if (!mgrId) return;
+    if (!mgrId) {
+      setMgrData({});
+      setError(null);
+      return;
+    }
 
-    // Skip fetch if we already have cached data for this manager
-    if (mgrData.id && String(mgrData.id) === String(mgrId)) {
+    // When mgrId changes, reset state and try cache for the new ID
+    if (prevMgrId.current !== mgrId) {
+      prevMgrId.current = mgrId;
+      setError(null);
+      const cached = cacheGet(`mgrData_${mgrId}`);
+      if (cached) {
+        setMgrData(cached);
+        return;
+      }
+      setMgrData({});
+    } else if (mgrData.id && String(mgrData.id) === String(mgrId)) {
       return;
     }
 
@@ -33,6 +47,10 @@ export default function useMgrData(mgrId) {
           throw new Error(`HTTP error: ${res.status}`);
         }
         const data = await res.json();
+        if (data.error === true && data.code) {
+          setError({ code: data.code, message: data.message });
+          return;
+        }
         setMgrData(data);
         cacheSet(`mgrData_${mgrId}`, data, TTL.MGR_DATA);
       } catch (err) {

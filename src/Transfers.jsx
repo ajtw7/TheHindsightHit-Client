@@ -16,14 +16,13 @@ export default function Transfers({ myTransfers, mgrId }) {
     [allPlayers]
   );
 
-  // Build a lookup for transfer impact by GW + element_in
+  // Build a lookup for transfer impact by GW + playerIn.id
   const impactLookup = useMemo(() => {
     if (!transferImpact || !Array.isArray(transferImpact)) return {};
     const lookup = {};
     for (const item of transferImpact) {
-      // Key by gameweek + playerIn name for matching
-      if (item.event != null) {
-        lookup[`${item.event}_${item.element_in}`] = item;
+      if (item.gameweek != null && item.playerIn?.id != null) {
+        lookup[`${item.gameweek}_${item.playerIn.id}`] = item;
       }
     }
     return lookup;
