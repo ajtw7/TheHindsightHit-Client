@@ -253,7 +253,7 @@ function App() {
               element={
                 gwPlayerStatsLoading || !mgrData?.id
                   ? <ProfileSkeleton />
-                  : <ManagerProfile myPlayers={myPlayers} transferCount={myTransfers.length} />
+                  : <ManagerProfile myPlayers={myPlayers} gwHistory={gwHistory} />
               }
             />
             <Route

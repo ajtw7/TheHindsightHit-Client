@@ -35,11 +35,12 @@ const Nav = ({ mgrId, onSwitchTeam }) => {
           <NavLinks mgrId={mgrId} />
           <button
             onClick={handleSwitch}
-            className="text-slate-400 hover:text-red-400 transition-colors"
+            className="text-slate-400 hover:text-red-400 transition-colors text-sm font-medium flex items-center gap-1.5"
             aria-label="Switch team"
             title="Switch team"
           >
-            <LogOut size={16} />
+            <LogOut size={14} />
+            <span className="hidden lg:inline">Switch Team</span>
           </button>
         </div>
         <button

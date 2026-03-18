@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useMemo } from 'react';
 import { PlayerContext } from './services/context';
 
 const POSITION_MAP = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' };
@@ -93,9 +93,16 @@ function PlayerModal({ player, teamLookup, onClose }) {
   );
 }
 
-export default function ManagerProfile({ myPlayers, transferCount }) {
+export default function ManagerProfile({ myPlayers, gwHistory }) {
   const { mgrData, teams } = useContext(PlayerContext);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  const totalTransfers = useMemo(
+    () => Array.isArray(gwHistory) && gwHistory.length > 0
+      ? gwHistory.reduce((sum, gw) => sum + (gw.event_transfers || 0), 0)
+      : null,
+    [gwHistory]
+  );
 
   const teamLookup = teams.reduce((acc, t) => { acc[t.id] = t; return acc; }, {});
 
@@ -162,7 +169,7 @@ export default function ManagerProfile({ myPlayers, transferCount }) {
           label="In the Bank"
           value={`£${(last_deadline_bank / 10).toFixed(1)}m`}
         />
-        <StatCard label="Total Transfers" value={last_deadline_total_transfers ?? transferCount ?? '—'} />
+        <StatCard label="Total Transfers" value={totalTransfers ?? last_deadline_total_transfers ?? '—'} />
       </div>
 
       {/* Starting XI */}
