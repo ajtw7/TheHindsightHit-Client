@@ -25,6 +25,8 @@ export default function useHistoricalPrices(gwIds) {
   useEffect(() => {
     if (!gwIds || gwIds.length === 0) return;
 
+    let stale = false;
+
     const fetchAll = async () => {
       // Hydrate L1 from L2 (localStorage) for any IDs not already in memory
       for (const id of gwIds) {
@@ -38,11 +40,13 @@ export default function useHistoricalPrices(gwIds) {
       const uncached = gwIds.filter((id) => !cache.current[id] && !inflight.current.has(id));
 
       if (uncached.length === 0) {
-        const result = {};
-        for (const id of gwIds) {
-          if (cache.current[id]) result[id] = cache.current[id];
+        if (!stale) {
+          const result = {};
+          for (const id of gwIds) {
+            if (cache.current[id]) result[id] = cache.current[id];
+          }
+          setHistoricalPrices(result);
         }
-        setHistoricalPrices(result);
         return;
       }
 
@@ -65,6 +69,8 @@ export default function useHistoricalPrices(gwIds) {
       // Clear inflight for any that failed
       uncached.forEach((id) => inflight.current.delete(id));
 
+      if (stale) return;
+
       if (results.some((r) => r.status === 'rejected')) {
         const failed = results.filter((r) => r.status === 'rejected');
         failed.forEach((r) => console.error('Failed to fetch GW prices:', r.reason));
@@ -79,6 +85,8 @@ export default function useHistoricalPrices(gwIds) {
     };
 
     fetchAll();
+
+    return () => { stale = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gwIdsKey]);
 

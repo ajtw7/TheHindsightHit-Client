@@ -119,25 +119,11 @@ export default function Transfers({ myTransfers, mgrId }) {
                 key={cardKey}
                 className="bg-slate-800 rounded-2xl border border-slate-700 p-4"
               >
-                {/* GW badge + impact + date */}
+                {/* GW badge + date */}
                 <div className="flex items-center justify-between mb-3 gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">
-                      GW {transfer.event}
-                    </span>
-                    {transfer.impact != null && (
-                      <span
-                        className="text-xs font-bold px-2.5 py-1 rounded-full"
-                        style={{
-                          backgroundColor: transfer.impact.netPointImpact >= 0 ? 'rgba(0,232,122,0.15)' : 'rgba(239,68,68,0.15)',
-                          color: transfer.impact.netPointImpact >= 0 ? '#00E87A' : '#ef4444',
-                        }}
-                      >
-                        {transfer.impact.netPointImpact >= 0 ? '+' : '−'}
-                        {Math.abs(transfer.impact.netPointImpact)} pts
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full">
+                    GW {transfer.event}
+                  </span>
                   <span className="text-slate-500 text-xs flex-shrink-0">
                     {new Date(transfer.time).toLocaleDateString('en-GB', {
                       day: 'numeric',
@@ -148,7 +134,7 @@ export default function Transfers({ myTransfers, mgrId }) {
                 </div>
 
                 {/* Player in / out */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-3">
                   <div className="bg-slate-700/50 rounded-xl p-3">
                     <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
                       In
@@ -172,6 +158,38 @@ export default function Transfers({ myTransfers, mgrId }) {
                     </p>
                   </div>
                 </div>
+
+                {/* Transfer impact breakdown */}
+                {transfer.impact != null && (() => {
+                  const net = transfer.impact.netPointImpact;
+                  const inPts = transfer.impact.playerIn?.pointsSinceTransfer ?? 0;
+                  const outPts = transfer.impact.playerOut?.pointsSinceTransfer ?? 0;
+                  const netColor = net > 0 ? '#00E87A' : net < 0 ? '#ef4444' : 'rgba(255,255,255,0.5)';
+                  const netArrow = net > 0 ? '▲' : net < 0 ? '▼' : '';
+                  return (
+                    <div className="bg-slate-700/30 rounded-xl px-3 py-2.5 mb-3">
+                      <p className="uppercase font-semibold tracking-wide mb-1.5" style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                        Points since transfer
+                      </p>
+                      <div className="flex items-center justify-between" style={{ fontSize: '13px' }}>
+                        <div className="flex items-center gap-1.5">
+                          <span style={{ color: '#00E87A' }} className="font-medium">{transfer.playerIn.web_name}</span>
+                          <span className="text-white font-bold">{inPts}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span style={{ color: '#ef4444' }} className="font-medium">{transfer.playerOut.web_name}</span>
+                          <span className="text-white font-bold">{outPts}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-1 mt-1.5">
+                        {netArrow && <span style={{ color: netColor, fontSize: '10px' }}>{netArrow}</span>}
+                        <span className="font-bold" style={{ fontSize: '14px', color: netColor }}>
+                          {net > 0 ? '+' : net < 0 ? '' : ''}{net} net
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Show/Hide Alternatives button */}
                 <button
