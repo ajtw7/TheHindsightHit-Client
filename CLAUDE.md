@@ -248,15 +248,25 @@ At the end of every session, before pushing, Claude must update this file:
 - **2026-03-17 — Session 10 (claude/review-claude-md-eXf2v):**
   - **Player headshots in profile modal:** `PlayerModal` in `ManagerProfile.jsx` now renders the player's headshot using `player.code` to build the FPL CDN URL (`https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`). Image is hidden via `onError` if the CDN returns a 404. Photo sits inline with the position badge, name, and team name in the modal header.
 
+- **2026-03-18 — Session 10 (claude/add-logo-to-header):**
+  - **10 client gaps closed:** landing page redesign (HomePage with validation + Plausible `team_searched` event); skeleton loaders (`ProfileSkeleton`, `TransfersSkeleton`, `GWHistorySkeleton`, `FixturesSkeleton`); inline alternatives panels (replaced modal); `useTransferImpact` hook fetching `GET /api/:mgrId/transfer-impact` with `useRef` mgrId-change detection; stale-data fix on team switch (all data hooks reset when mgrId changes); structured error codes from `useMgrData` (`NOT_FOUND`, `PRIVATE_TEAM`, etc.); Total Transfers stat sourced from `gwHistory` `event_transfers` sum; logo preload + `fetchPriority="high"`; Nav 48px touch targets; Plausible analytics script in `public/index.html` + `src/utils/analytics.js` `trackEvent`.
+  - **URL-based mgrId (FIX 1):** `App.js` rewritten to derive `mgrId` exclusively from `useMatch('/manager/:mgrId/*')`; `setMgrId` is now a `navigate()` call; localStorage no longer used as source of truth; error banner uses solid `#ef4444` background; Header only renders when mgrId is in the URL.
+  - **Stale-flag deduplication (FIX 2):** `useGWLiveStats` and `useHistoricalPrices` both gain a `stale` cleanup flag (`return () => { stale = true; }`). Superseded effect invocations (triggered by rapid `gwIdsKey` changes) are silently discarded — prevents duplicate state updates and stale overwrites.
+  - **Transfer impact breakdown (FIX 3):** Replaced single-badge impact display in `Transfers.jsx` with a full panel showing playerIn points since transfer, playerOut points since transfer, and net impact with ▲/▼ arrow. Colours: `#00E87A` positive, `#ef4444` negative, `rgba(255,255,255,0.5)` zero. Typography: 10px label, 13px rows, 14px bold net.
+  - All 70 tests pass throughout. Production build succeeds (`CI=true`).
+
+- **2026-03-18 — Polish fixes (claude/add-logo-to-header):**
+  - **Transfer impact label:** header in the impact breakdown panel now reads "POINTS SINCE GW N" (e.g. "POINTS SINCE GW 29") using `transfer.impact.gameweek` with `transfer.event` as fallback.
+  - **Stale mgrId cleanup:** `initCache()` now calls `localStorage.removeItem('mgrId')` on every startup, purging the plain key written by old code that used localStorage as source of truth. Prevents ghost API calls on cold load after upgrading from a cached old build.
+
 ---
 
 ## What's Next
 
-*Last updated: 2026-03-17*
+*Last updated: 2026-03-18*
 
 Remaining priorities (in order):
 
 1. **Backend DB migration** — move remaining FPL-proxied endpoints to a database (like pricing already is). Would eliminate FPL rate-limiting at the root.
-2. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
-3. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
-4. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
+2. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
+3. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
