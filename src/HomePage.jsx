@@ -1,57 +1,101 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { trackEvent } from './utils/analytics';
 
-export default function HomePage({ setMgrId }) {
+const LOGO_SRC = `${process.env.PUBLIC_URL}/THH—Vector_v1.png`;
+
+export default function HomePage({ setMgrId, errorBanner }) {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const id = Number(inputValue);
+    const trimmed = inputValue.trim();
+    const id = Number(trimmed);
+    if (!trimmed || !Number.isInteger(id) || id <= 0) {
+      setError('Please enter a valid FPL Team ID');
+      return;
+    }
+    setError('');
     setMgrId(id);
     setInputValue('');
-    navigate(`/manager/${id}/profile`);
+    trackEvent('team_searched', { teamId: String(id) });
+    navigate(`/manager/${id}/transfers`);
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">The Hindsight Hit</h1>
-          <p className="text-slate-400 text-sm">
-            Enter your FPL team ID to analyse your transfers
-          </p>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#0F1620' }}>
+      <div className="w-full max-w-md">
+        {/* Error banner from redirect */}
+        {errorBanner && (
+          <div className="mb-6">{errorBanner}</div>
+        )}
+
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img
+            src={LOGO_SRC}
+            alt="The Hindsight Hit"
+            className="h-16 md:h-20 w-auto"
+          />
         </div>
 
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="team-id"
-                className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2"
-              >
-                Team ID
-              </label>
-              <input
-                id="team-id"
-                type="number"
-                value={inputValue}
-                onChange={(e) => setInputValue(Number(e.target.value))}
-                placeholder="e.g. 1234567"
-                className="w-full bg-slate-700 border border-slate-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 placeholder-slate-500 text-base"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-900 font-bold rounded-xl px-6 py-3 transition-colors text-base"
-            >
-              Enter the Lab
-            </button>
-          </form>
-        </div>
+        {/* Headline */}
+        <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-3 leading-tight">
+          See exactly what your transfers cost you.
+        </h1>
+        <p className="text-center text-base mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Enter your FPL Team ID to analyse every transfer decision you've made this season.
+        </p>
 
-        <p className="text-center text-slate-600 text-xs mt-6">
-          Find your team ID on the FPL website under Points › select your team
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              id="team-id"
+              type="number"
+              inputMode="numeric"
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                if (error) setError('');
+              }}
+              placeholder="Your FPL Team ID"
+              className="w-full border text-white rounded-xl px-4 py-3.5 focus:outline-none placeholder-slate-500 text-base"
+              style={{
+                backgroundColor: '#0F1620',
+                borderColor: error ? '#ef4444' : 'rgba(255,255,255,0.15)',
+              }}
+              onFocus={(e) => {
+                if (!error) e.target.style.borderColor = '#00E87A';
+              }}
+              onBlur={(e) => {
+                if (!error) e.target.style.borderColor = 'rgba(255,255,255,0.15)';
+              }}
+            />
+            {error && (
+              <p className="text-red-400 text-sm mt-2">{error}</p>
+            )}
+          </div>
+          <button
+            type="submit"
+            className="w-full font-bold rounded-xl px-6 py-3.5 transition-colors text-base"
+            style={{
+              backgroundColor: '#00E87A',
+              color: '#0F1620',
+              minHeight: '48px',
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = '#00d46f')}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = '#00E87A')}
+          >
+            Analyse My Transfers
+          </button>
+        </form>
+
+        {/* Helper text */}
+        <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Find your Team ID on the FPL website under Points — tap your team name — the number in the URL is your ID.
         </p>
       </div>
     </div>

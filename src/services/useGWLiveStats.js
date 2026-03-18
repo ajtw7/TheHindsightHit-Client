@@ -18,6 +18,7 @@ export default function useGWLiveStats(gwIds, currentGWId) {
   const [gwLiveStats, setGwLiveStats] = useState({});
   const [error, setError] = useState(null);
   const cache = useRef({});
+  const inflight = useRef(new Set());
 
   // Use a stable string key so the effect only re-runs when IDs actually change.
   const gwIdsKey = [...gwIds].sort((a, b) => a - b).join(',');
@@ -34,7 +35,8 @@ export default function useGWLiveStats(gwIds, currentGWId) {
         }
       }
 
-      const uncached = gwIds.filter((id) => !cache.current[id]);
+      // Filter out cached and in-flight IDs
+      const uncached = gwIds.filter((id) => !cache.current[id] && !inflight.current.has(id));
 
       if (uncached.length === 0) {
         const result = {};
@@ -45,6 +47,9 @@ export default function useGWLiveStats(gwIds, currentGWId) {
         return;
       }
 
+      // Mark as in-flight
+      uncached.forEach((id) => inflight.current.add(id));
+
       const tasks = uncached.map((gwId) => async () => {
         const res = await fetch(
           `${process.env.REACT_APP_API_URL}/api/gw-live-stats/${gwId}`
@@ -52,11 +57,15 @@ export default function useGWLiveStats(gwIds, currentGWId) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         cache.current[gwId] = data;
+        inflight.current.delete(gwId);
         const ttl = gwId === currentGWId ? TTL.GW_LIVE_CURRENT : TTL.GW_LIVE_FINISHED;
         cacheSet(`gwLiveStats_${gwId}`, data, ttl);
       });
 
       const results = await concurrencyLimit(tasks, 3);
+
+      // Clear inflight for any that failed
+      uncached.forEach((id) => inflight.current.delete(id));
 
       if (results.some((r) => r.status === 'rejected')) {
         const failed = results.filter((r) => r.status === 'rejected');

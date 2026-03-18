@@ -93,7 +93,7 @@ function PlayerModal({ player, teamLookup, onClose }) {
   );
 }
 
-export default function ManagerProfile({ myPlayers }) {
+export default function ManagerProfile({ myPlayers, transferCount }) {
   const { mgrData, teams } = useContext(PlayerContext);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
@@ -162,12 +162,12 @@ export default function ManagerProfile({ myPlayers }) {
           label="In the Bank"
           value={`£${(last_deadline_bank / 10).toFixed(1)}m`}
         />
-        <StatCard label="Total Transfers" value={last_deadline_total_transfers} />
+        <StatCard label="Total Transfers" value={last_deadline_total_transfers ?? transferCount ?? '—'} />
       </div>
 
       {/* Starting XI */}
       <h2 className="text-lg font-semibold text-white mb-3">Starting XI</h2>
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-2">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-2">
         {starters.map((player) => (
           <PlayerCard key={player.id} player={player} onClick={setSelectedPlayer} />
         ))}
@@ -175,7 +175,7 @@ export default function ManagerProfile({ myPlayers }) {
 
       {/* Bench */}
       <h2 className="text-base font-semibold text-slate-400 mb-3 mt-5">Bench</h2>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
         {bench.map((player) => (
           <PlayerCard key={player.id} player={player} onClick={setSelectedPlayer} />
         ))}

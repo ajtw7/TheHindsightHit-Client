@@ -24,13 +24,24 @@ export default function useMgrData(mgrId) {
         const res = await fetch(
           `${process.env.REACT_APP_API_URL}/api/mgr-profile/${mgrId}`
         );
-        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          if (body.error && body.code) {
+            setError({ code: body.code, message: body.message });
+            return;
+          }
+          throw new Error(`HTTP error: ${res.status}`);
+        }
         const data = await res.json();
         setMgrData(data);
         cacheSet(`mgrData_${mgrId}`, data, TTL.MGR_DATA);
       } catch (err) {
         console.error('Error fetching manager data', err);
-        setError(err.message || 'Failed to fetch manager data');
+        const isNetwork = !err.message?.startsWith('HTTP');
+        setError({
+          code: isNetwork ? 'NETWORK_ERROR' : 'SERVER_ERROR',
+          message: err.message || 'Failed to fetch manager data',
+        });
       } finally {
         setLoading(false);
       }

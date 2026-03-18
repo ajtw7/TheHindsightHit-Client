@@ -18,6 +18,7 @@ export default function useHistoricalPrices(gwIds) {
   const [historicalPrices, setHistoricalPrices] = useState({});
   const [error, setError] = useState(null);
   const cache = useRef({});
+  const inflight = useRef(new Set());
 
   const gwIdsKey = [...gwIds].sort((a, b) => a - b).join(',');
 
@@ -33,7 +34,8 @@ export default function useHistoricalPrices(gwIds) {
         }
       }
 
-      const uncached = gwIds.filter((id) => !cache.current[id]);
+      // Filter out cached and in-flight IDs
+      const uncached = gwIds.filter((id) => !cache.current[id] && !inflight.current.has(id));
 
       if (uncached.length === 0) {
         const result = {};
@@ -44,6 +46,9 @@ export default function useHistoricalPrices(gwIds) {
         return;
       }
 
+      // Mark as in-flight
+      uncached.forEach((id) => inflight.current.add(id));
+
       const tasks = uncached.map((gwId) => async () => {
         const res = await fetch(
           `${process.env.REACT_APP_API_URL}/api/prices/${gwId}`
@@ -51,10 +56,14 @@ export default function useHistoricalPrices(gwIds) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         cache.current[gwId] = data;
+        inflight.current.delete(gwId);
         cacheSet(`prices_${gwId}`, data, TTL.PRICES);
       });
 
       const results = await concurrencyLimit(tasks, 3);
+
+      // Clear inflight for any that failed
+      uncached.forEach((id) => inflight.current.delete(id));
 
       if (results.some((r) => r.status === 'rejected')) {
         const failed = results.filter((r) => r.status === 'rejected');
