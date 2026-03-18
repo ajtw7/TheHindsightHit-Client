@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useGameweeks from './services/useGameweeks';
 import useAllPlayers from './services/useAllPlayers';
 import useMgrData from './services/useMgrData';
@@ -17,6 +17,7 @@ import Fixtures from './Fixtures';
 import Transfers from './Transfers';
 import { PlayerContext } from './services/context';
 import { SelectedGWContext } from './services/context';
+import { ProfileSkeleton, GWHistorySkeleton } from './Components/Skeleton';
 import './styles/App.css';
 
 function App() {
@@ -29,6 +30,8 @@ function App() {
   });
   const [loading, setLoading] = useState(true);
   const [isOffSeason, setIsOffSeason] = useState(false);
+  const [errorBanner, setErrorBanner] = useState(null);
+  const navigate = useNavigate();
 
   // Persist mgrId to localStorage
   useEffect(() => {
@@ -37,6 +40,16 @@ function App() {
   }, [mgrId]);
 
   const { mgrData, error: mgrDataError } = useMgrData(mgrId);
+
+  // Handle NOT_FOUND and PRIVATE_TEAM errors from mgrData
+  useEffect(() => {
+    if (!mgrDataError?.code) return;
+    if (mgrDataError.code === 'NOT_FOUND') {
+      setMgrId(null);
+      setErrorBanner("We couldn't find that team. Please check your Team ID and try again.");
+      navigate('/', { replace: true });
+    }
+  }, [mgrDataError, navigate]);
   const { allPlayers, error: allPlayersError } = useAllPlayers();
   // Always fetch stats for the CURRENT GW so that the Manager Profile
   // squad display is never affected by the GW History dropdown selection.
@@ -85,19 +98,22 @@ function App() {
 
   const { teams, error: teamsError } = useTeams();
 
-  // Only fetch GW-level data on pages that actually use it (Transfers, GW History).
-  // On other pages (Profile, Fixtures), pass empty arrays so the hooks skip fetching.
+  // Only fetch GW-level data on pages that actually use it.
+  // Transfers page: only GWs where transfers occurred.
+  // GW History page: only GWs from gwHistory.
   const location = useLocation();
-  const needsGWData = location.pathname.includes('/transfers') ||
-                      location.pathname.includes('/gameweek-history');
+  const onTransfersPage = location.pathname.includes('/transfers');
+  const onGWHistoryPage = location.pathname.includes('/gameweek-history');
 
-  const neededGWIds = useMemo(() => {
-    const transferGWs = myTransfers.map((t) => t.event);
-    const historyGWs = gwHistory.map((h) => h.event);
-    return [...new Set([...transferGWs, ...historyGWs])];
-  }, [myTransfers, gwHistory]);
-
-  const activeGWIds = needsGWData ? neededGWIds : [];
+  const activeGWIds = useMemo(() => {
+    if (onTransfersPage) {
+      return [...new Set(myTransfers.map((t) => t.event))];
+    }
+    if (onGWHistoryPage) {
+      return [...new Set(gwHistory.map((h) => h.event))];
+    }
+    return [];
+  }, [onTransfersPage, onGWHistoryPage, myTransfers, gwHistory]);
   const { gwLiveStats, error: gwLiveStatsError } = useGWLiveStats(activeGWIds, currentGW?.id);
   const { historicalPrices, error: historicalPricesError } = useHistoricalPrices(activeGWIds);
 
@@ -131,10 +147,21 @@ function App() {
     return Object.values(byPlayer);
   }, [gwLiveStats, allPlayersById, historicalPrices]);
 
+  // Check for private team error (shown inline, not as full-page error)
+  const isPrivateTeam = mgrDataError?.code === 'PRIVATE_TEAM';
+
+  // Check for server unavailable (network errors or 503s)
+  const isServerDown = [gameweeksError, allPlayersError, teamsError].some(
+    (e) => e && (typeof e === 'string' ? e.includes('fetch') : e?.code === 'NETWORK_ERROR')
+  );
+
+  // Don't count handled error codes (NOT_FOUND, PRIVATE_TEAM) as generic app errors
+  const mgrDataIsGenericError = mgrDataError && !['NOT_FOUND', 'PRIVATE_TEAM'].includes(mgrDataError.code);
+
   const appErrors = [
     gameweeksError && 'Gameweek data',
     allPlayersError && 'Player data',
-    mgrDataError && 'Manager profile',
+    mgrDataIsGenericError && 'Manager profile',
     gwPlayerStatsError && 'Squad data',
     transfersError && 'Transfer history',
     gwHistoryError && 'Gameweek history',
@@ -147,7 +174,7 @@ function App() {
     setMgrId(null);
   }, []);
 
-  if (loading || gwPlayerStatsLoading || gwHistoryLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
         <div className="w-12 h-12 border-4 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
@@ -160,9 +187,13 @@ function App() {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4 px-6">
         <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 max-w-md w-full text-center">
-          <h2 className="text-white text-lg font-bold mb-2">Something went wrong</h2>
+          <h2 className="text-white text-lg font-bold mb-2">
+            {isServerDown ? 'Server Unavailable' : 'Something went wrong'}
+          </h2>
           <p className="text-slate-400 text-sm mb-4">
-            Failed to load: {appErrors.join(', ')}
+            {isServerDown
+              ? 'The server is temporarily unavailable. Please try again in a few minutes.'
+              : `Failed to load: ${appErrors.join(', ')}`}
           </p>
           <button
             onClick={() => window.location.reload()}
@@ -176,9 +207,15 @@ function App() {
   }
 
   if (mgrId === null) {
+    const banner = errorBanner ? (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-start justify-between gap-2">
+        <p className="text-red-400 text-sm">{errorBanner}</p>
+        <button onClick={() => setErrorBanner(null)} className="text-red-400 hover:text-white text-lg leading-none flex-shrink-0">✕</button>
+      </div>
+    ) : null;
     return (
       <Routes>
-        <Route path="/" element={<HomePage setMgrId={setMgrId} />} />
+        <Route path="/" element={<HomePage setMgrId={setMgrId} errorBanner={banner} />} />
         {/* Redirect any /manager/... URL back to home when no team is selected */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -204,28 +241,39 @@ function App() {
               No active gameweek — showing most recent data
             </div>
           )}
+          {isPrivateTeam && (
+            <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm text-center px-4 py-3">
+              This team is set to private on FPL. Update your privacy settings to use The Hindsight Hit.
+            </div>
+          )}
           <Routes>
-            <Route path="/" element={<Navigate to={`/manager/${mgrId}/profile`} replace />} />
+            <Route path="/" element={<HomePage setMgrId={setMgrId} />} />
             <Route
               path="/manager/:mgrId/profile"
-              element={<ManagerProfile myPlayers={myPlayers} />}
+              element={
+                gwPlayerStatsLoading || !mgrData?.id
+                  ? <ProfileSkeleton />
+                  : <ManagerProfile myPlayers={myPlayers} transferCount={myTransfers.length} />
+              }
             />
             <Route
               path="/manager/:mgrId/gameweek-history"
               element={
-                <GWHistory
-                  gwHistory={gwHistory}
-                  myPlayers={myPlayers}
-                  setSelectedGW={setSelectedGW}
-                  myTransfers={myTransfers}
-                  mgrId={mgrId}
-                />
+                gwHistoryLoading
+                  ? <GWHistorySkeleton />
+                  : <GWHistory
+                      gwHistory={gwHistory}
+                      myPlayers={myPlayers}
+                      setSelectedGW={setSelectedGW}
+                      myTransfers={myTransfers}
+                      mgrId={mgrId}
+                    />
               }
             />
             <Route path="/manager/:mgrId/fixtures" element={<Fixtures />} />
             <Route
               path="/manager/:mgrId/transfers"
-              element={<Transfers myTransfers={myTransfers} />}
+              element={<Transfers myTransfers={myTransfers} mgrId={mgrId} />}
             />
             {/* Redirect old bookmarked URLs */}
             <Route path="/manager-profile" element={<Navigate to={`/manager/${mgrId}/profile`} replace />} />

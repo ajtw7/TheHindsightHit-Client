@@ -1,9 +1,10 @@
 import { useContext, useState, useMemo } from 'react';
 import useFixtures from './services/useFixtures';
 import { PlayerContext } from './services/context';
+import { FixturesSkeleton } from './Components/Skeleton';
 
 export default function Fixtures() {
-  const { fixtures, error: fixturesError } = useFixtures();
+  const { fixtures, loading: fixturesLoading, error: fixturesError } = useFixtures();
   const { currentGW, teams } = useContext(PlayerContext);
   const [selectedGW, setSelectedGW] = useState(null);
 
@@ -25,6 +26,8 @@ export default function Fixtures() {
     [teams]
   );
   const teamName = (id) => teamLookup[id]?.name ?? `Team ${id}`;
+
+  if (fixturesLoading) return <FixturesSkeleton />;
 
   return (
     <div className="bg-slate-900 min-h-screen px-4 py-6 max-w-3xl mx-auto">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Transfers from './Transfers';
 import { PlayerContext } from './services/context';
 
@@ -13,11 +13,11 @@ const entry = (element, round, total_points, value) => ({
 });
 
 const allPlayers = [
-  { id: 10, web_name: 'Salah' },
-  { id: 20, web_name: 'Haaland' },
-  { id: 30, web_name: 'Saka' },
-  { id: 40, web_name: 'Palmer' },
-  { id: 5, web_name: 'Unknown Out' },
+  { id: 10, web_name: 'Salah', element_type: 3 },
+  { id: 20, web_name: 'Haaland', element_type: 4 },
+  { id: 30, web_name: 'Saka', element_type: 3 },
+  { id: 40, web_name: 'Palmer', element_type: 3 },
+  { id: 5, web_name: 'Unknown Out', element_type: 2 },
 ];
 
 // GW5 performances:
@@ -55,12 +55,11 @@ const renderTransfers = (
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-const openModal = async () => {
+const expandAlternatives = async () => {
   await waitFor(() =>
     expect(screen.getByRole('button', { name: /Show \d+ Alternative/ })).toBeInTheDocument()
   );
   fireEvent.click(screen.getByRole('button', { name: /Show \d+ Alternative/ }));
-  await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
 };
 
 // ─── tests ───────────────────────────────────────────────────────────────────
@@ -162,139 +161,90 @@ describe('Transfers', () => {
     });
   });
 
-  describe('player name resolution', () => {
-    it('displays the transferred-in player name in the modal', async () => {
-      renderTransfers();
-      await openModal();
-      const dialog = screen.getByRole('dialog');
-      expect(within(dialog).getByText(/Salah/)).toBeInTheDocument();
-    });
-  });
+  // ── Inline alternatives panel ──────────────────────────────────────────────
 
-  // ── Show Alternatives modal ───────────────────────────────────────────────
-
-  describe('Show Alternatives modal', () => {
-    describe('opening', () => {
-      it('opens the modal when the button is clicked', async () => {
+  describe('Show Alternatives panel', () => {
+    describe('expanding', () => {
+      it('expands the panel when the button is clicked', async () => {
         renderTransfers();
-        await openModal();
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        await expandAlternatives();
+        expect(screen.getByText(/Saka/)).toBeInTheDocument();
       });
 
-      it('shows the correct gameweek in the modal heading', async () => {
+      it('toggles button text to "Hide Alternatives" when expanded', async () => {
         renderTransfers();
-        await openModal();
-        expect(
-          screen.getByRole('heading', { name: /GW5 Alternatives/ })
-        ).toBeInTheDocument();
+        await expandAlternatives();
+        expect(screen.getByRole('button', { name: 'Hide Alternatives' })).toBeInTheDocument();
       });
 
-      it('shows which player was transferred in', async () => {
+      it('shows the transferred-in player info on the card', async () => {
         renderTransfers();
-        await openModal();
-        const dialog = screen.getByRole('dialog');
-        expect(within(dialog).getByText(/Salah/)).toBeInTheDocument();
+        await expandAlternatives();
+        expect(screen.getByText(/Salah/)).toBeInTheDocument();
       });
     });
 
     describe('alternatives list — qualifying player', () => {
       it('shows Saka as an alternative (more points, within budget)', async () => {
         renderTransfers();
-        await openModal();
-        const dialog = screen.getByRole('dialog');
-        expect(within(dialog).getByText(/Saka/)).toBeInTheDocument();
+        await expandAlternatives();
+        expect(screen.getByText(/Saka/)).toBeInTheDocument();
       });
 
       it('shows the correct points for the alternative', async () => {
         renderTransfers();
-        await openModal();
-        const dialog = screen.getByRole('dialog');
-        expect(within(dialog).getByText(/9 pts/)).toBeInTheDocument();
+        await expandAlternatives();
+        expect(screen.getByText(/9 pts/)).toBeInTheDocument();
       });
 
       it('shows the correct price for the alternative (value / 10 to 1 dp)', async () => {
         renderTransfers();
-        await openModal();
-        const dialog = screen.getByRole('dialog');
+        await expandAlternatives();
         // Saka value = 75 → £7.5m
-        expect(within(dialog).getByText(/£7\.5m/)).toBeInTheDocument();
+        expect(screen.getByText(/£7\.5m/)).toBeInTheDocument();
       });
     });
 
     describe('alternatives list — disqualified players', () => {
       it('does NOT show Haaland (better points, but over budget)', async () => {
         renderTransfers();
-        await openModal();
-        const dialog = screen.getByRole('dialog');
-        expect(within(dialog).queryByText(/Haaland/)).not.toBeInTheDocument();
+        await expandAlternatives();
+        expect(screen.queryByText(/Haaland/)).not.toBeInTheDocument();
       });
 
       it('does NOT show Palmer (same points, not strictly greater)', async () => {
         renderTransfers();
-        await openModal();
-        const dialog = screen.getByRole('dialog');
-        expect(within(dialog).queryByText(/Palmer/)).not.toBeInTheDocument();
+        await expandAlternatives();
+        expect(screen.queryByText(/Palmer/)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('collapsing', () => {
+      it('collapses when the Hide Alternatives button is clicked', async () => {
+        renderTransfers();
+        await expandAlternatives();
+        expect(screen.getByText(/Saka/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Hide Alternatives' }));
+        // Saka should still be visible in the page context (player name on card),
+        // but the alternatives panel text specific to it should be gone
+        await waitFor(() =>
+          expect(screen.queryByText(/9 pts/)).not.toBeInTheDocument()
+        );
       });
     });
 
     describe('no alternatives case', () => {
-      it('shows the empty-state message when there are no qualifying alternatives', async () => {
+      it('disables button when no qualifying alternatives exist', async () => {
         const dominantTransfer = { ...baseTransfer, element_in: 20 }; // Haaland, 14 pts
         renderTransfers([dominantTransfer]);
-        // Open via the "No Better Alternatives Found" button
         await waitFor(() =>
           expect(
             screen.getByRole('button', { name: 'No Better Alternatives Found' })
           ).toBeInTheDocument()
         );
-        fireEvent.click(screen.getByRole('button', { name: 'No Better Alternatives Found' }));
-        await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
         expect(
-          screen.getByText('No better alternatives available within budget.')
-        ).toBeInTheDocument();
-      });
-
-      it('does not render a list when there are no alternatives', async () => {
-        const dominantTransfer = { ...baseTransfer, element_in: 20 };
-        renderTransfers([dominantTransfer]);
-        await waitFor(() =>
-          expect(
-            screen.getByRole('button', { name: 'No Better Alternatives Found' })
-          ).toBeInTheDocument()
-        );
-        fireEvent.click(screen.getByRole('button', { name: 'No Better Alternatives Found' }));
-        await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
-        expect(screen.queryByRole('list')).not.toBeInTheDocument();
-      });
-    });
-
-    describe('closing the modal', () => {
-      it('closes when the Close button is clicked', async () => {
-        renderTransfers();
-        await openModal();
-        fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-        await waitFor(() =>
-          expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-        );
-      });
-
-      it('closes when the backdrop overlay is clicked', async () => {
-        renderTransfers();
-        await openModal();
-        // The backdrop is the outer dialog div; click it directly
-        fireEvent.click(screen.getByRole('dialog'));
-        await waitFor(() =>
-          expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-        );
-      });
-
-      it('does not close when the modal content area itself is clicked (stopPropagation)', async () => {
-        renderTransfers();
-        await openModal();
-        // Click inside the modal body (the inner div) — should NOT close
-        const heading = screen.getByRole('heading', { name: /GW\d+ Alternatives/ });
-        fireEvent.click(heading);
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+          screen.getByRole('button', { name: 'No Better Alternatives Found' })
+        ).toBeDisabled();
       });
     });
   });

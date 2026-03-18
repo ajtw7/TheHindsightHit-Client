@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 
 const linkClass = ({ isActive }) =>
-  `text-sm font-medium transition-colors ${
+  `text-sm font-medium transition-colors py-2 block ${
     isActive ? 'text-emerald-400' : 'text-slate-300 hover:text-white'
   }`;
 
@@ -43,7 +43,7 @@ const Nav = ({ mgrId, onSwitchTeam }) => {
           </button>
         </div>
         <button
-          className="md:hidden text-slate-300 hover:text-white transition-colors"
+          className="md:hidden text-slate-300 hover:text-white transition-colors p-2 -mr-2 min-w-[48px] min-h-[48px] flex items-center justify-center"
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle menu"
         >
@@ -51,11 +51,11 @@ const Nav = ({ mgrId, onSwitchTeam }) => {
         </button>
       </nav>
       {isOpen && (
-        <div className="flex basis-full flex-col gap-1 border-t border-slate-700 pt-3 mt-1 w-full">
+        <div className="flex basis-full flex-col gap-0 border-t border-slate-700 pt-2 mt-1 w-full">
           <NavLinks mgrId={mgrId} onClose={() => setIsOpen(false)} />
           <button
             onClick={handleSwitch}
-            className="text-sm font-medium text-slate-400 hover:text-red-400 transition-colors text-left mt-2 pt-2 border-t border-slate-700 flex items-center gap-2"
+            className="text-sm font-medium text-slate-400 hover:text-red-400 transition-colors text-left mt-1 pt-2 border-t border-slate-700 flex items-center gap-2 min-h-[44px]"
           >
             <LogOut size={14} />
             Switch Team
