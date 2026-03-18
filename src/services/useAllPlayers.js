@@ -3,11 +3,12 @@ import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 const CACHE_KEY = 'allPlayers';
 
-export default function useAllPlayers() {
+export default function useAllPlayers(enabled = true) {
   const [allPlayers, setAllPlayers] = useState(() => cacheGet(CACHE_KEY) ?? []);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) return;
     if (allPlayers.length > 0) return;
 
     const fetchData = async () => {
@@ -24,7 +25,7 @@ export default function useAllPlayers() {
     };
     fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   return { allPlayers, error };
 }

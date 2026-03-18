@@ -3,11 +3,12 @@ import { cacheGet, cacheSet, TTL } from '../utils/cache';
 
 const CACHE_KEY = 'teams';
 
-export default function useTeams() {
+export default function useTeams(enabled = true) {
   const [teams, setTeams] = useState(() => cacheGet(CACHE_KEY) ?? []);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) return;
     if (teams.length > 0) return;
 
     const fetchData = async () => {
@@ -24,7 +25,7 @@ export default function useTeams() {
     };
     fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   return { teams, error };
 }
