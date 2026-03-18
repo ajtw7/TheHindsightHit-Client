@@ -259,6 +259,7 @@ At the end of every session, before pushing, Claude must update this file:
   - **Transfer impact label:** header in the impact breakdown panel now reads "POINTS SINCE GW N" (e.g. "POINTS SINCE GW 29") using `transfer.impact.gameweek` with `transfer.event` as fallback.
   - **Stale mgrId cleanup:** `initCache()` now calls `localStorage.removeItem('mgrId')` on every startup, purging the plain key written by old code that used localStorage as source of truth. Prevents ghost API calls on cold load after upgrading from a cached old build.
   - **Zero API calls on landing page:** `useGameweeks`, `useAllPlayers`, and `useTeams` now accept an `enabled` flag (default `true`). App.js passes `!!mgrId` so bootstrap data only fetches when a manager ID is present in the URL. Cache hydration via `useState` initialiser still runs unconditionally so cached data is available instantly on navigation.
+  - **Landing page loading bug fix:** `loading` initialises as `true` and was only set `false` once gameweeks resolved — but gameweeks never fetched at `/` (no mgrId), leaving the spinner permanent. Fixed by guarding the spinner with `loading && hasMgrId` so the landing page always renders immediately. Added 4 regression tests to `App.test.js` covering cold load at `/`, spinner on manager route, stalled fetch with no spinner, and cached gameweeks. All 74 tests pass.
 
 ---
 

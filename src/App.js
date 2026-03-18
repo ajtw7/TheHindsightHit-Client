@@ -174,7 +174,10 @@ function App() {
     navigate('/');
   }, [navigate]);
 
-  if (loading) {
+  // Never block the landing page with a spinner — it has no data dependencies.
+  // Only show the loading state when a manager route is active and gameweeks
+  // haven't resolved yet.
+  if (loading && hasMgrId) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
         <div className="w-12 h-12 border-4 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
