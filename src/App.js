@@ -17,7 +17,7 @@ import Fixtures from './Fixtures';
 import Transfers from './Transfers';
 import { PlayerContext } from './services/context';
 import { SelectedGWContext } from './services/context';
-import { ProfileSkeleton, TransfersSkeleton, GWHistorySkeleton, FixturesSkeleton } from './Components/Skeleton';
+import { ProfileSkeleton, GWHistorySkeleton } from './Components/Skeleton';
 import './styles/App.css';
 
 function App() {
