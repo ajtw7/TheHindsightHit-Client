@@ -31,6 +31,9 @@ function PlayerCard({ player, onClick }) {
 function PlayerModal({ player, teamLookup, onClose }) {
   const teamName = teamLookup[player.team]?.name ?? `Team ${player.team}`;
   const pos = POSITION_MAP[player.element_type] ?? '—';
+  const photoUrl = player.code
+    ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${player.code}.png`
+    : null;
 
   return (
     <div
@@ -45,14 +48,24 @@ function PlayerModal({ player, teamLookup, onClose }) {
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
-          <div>
-            <span className="text-xs font-semibold uppercase text-emerald-400 bg-emerald-400/10 rounded px-2 py-0.5">
-              {pos}
-            </span>
-            <h2 className="text-xl font-bold text-white mt-2">
-              {player.first_name} {player.second_name}
-            </h2>
-            <p className="text-slate-400 text-sm mt-0.5">{teamName}</p>
+          <div className="flex items-center gap-4">
+            {photoUrl && (
+              <img
+                src={photoUrl}
+                alt={player.web_name}
+                className="w-16 h-[74px] object-cover object-top rounded-xl border border-slate-700 flex-shrink-0 bg-slate-700"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            )}
+            <div>
+              <span className="text-xs font-semibold uppercase text-emerald-400 bg-emerald-400/10 rounded px-2 py-0.5">
+                {pos}
+              </span>
+              <h2 className="text-xl font-bold text-white mt-2">
+                {player.first_name} {player.second_name}
+              </h2>
+              <p className="text-slate-400 text-sm mt-0.5">{teamName}</p>
+            </div>
           </div>
           <button
             onClick={onClose}
