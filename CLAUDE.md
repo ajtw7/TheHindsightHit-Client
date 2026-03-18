@@ -246,16 +246,22 @@ At the end of every session, before pushing, Claude must update this file:
   - **Historical GW lineups in GWHistory:** created `useGWPicks` hook that fetches the manager's actual squad for any GW via the existing `/api/{mgrId}/gw-player-stats/{gwId}` endpoint. GWHistory now shows the squad that was active for the selected GW (not the current squad). Player lookups use `allPlayers` instead of `myPlayers` so transferred-out players are still resolved. Added loading spinner while picks load.
   - Added `useGWPicks.test.js` (4 test cases: fetch, null params, cache hit, error). All 74 tests pass. Production build succeeds.
 
+- **2026-03-18 — Session 10 (claude/add-logo-to-header):**
+  - **10 client gaps closed:** landing page redesign (HomePage with validation + Plausible `team_searched` event); skeleton loaders (`ProfileSkeleton`, `TransfersSkeleton`, `GWHistorySkeleton`, `FixturesSkeleton`); inline alternatives panels (replaced modal); `useTransferImpact` hook fetching `GET /api/:mgrId/transfer-impact` with `useRef` mgrId-change detection; stale-data fix on team switch (all data hooks reset when mgrId changes); structured error codes from `useMgrData` (`NOT_FOUND`, `PRIVATE_TEAM`, etc.); Total Transfers stat sourced from `gwHistory` `event_transfers` sum; logo preload + `fetchPriority="high"`; Nav 48px touch targets; Plausible analytics script in `public/index.html` + `src/utils/analytics.js` `trackEvent`.
+  - **URL-based mgrId (FIX 1):** `App.js` rewritten to derive `mgrId` exclusively from `useMatch('/manager/:mgrId/*')`; `setMgrId` is now a `navigate()` call; localStorage no longer used as source of truth; error banner uses solid `#ef4444` background; Header only renders when mgrId is in the URL.
+  - **Stale-flag deduplication (FIX 2):** `useGWLiveStats` and `useHistoricalPrices` both gain a `stale` cleanup flag (`return () => { stale = true; }`). Superseded effect invocations (triggered by rapid `gwIdsKey` changes) are silently discarded — prevents duplicate state updates and stale overwrites.
+  - **Transfer impact breakdown (FIX 3):** Replaced single-badge impact display in `Transfers.jsx` with a full panel showing playerIn points since transfer, playerOut points since transfer, and net impact with ▲/▼ arrow. Colours: `#00E87A` positive, `#ef4444` negative, `rgba(255,255,255,0.5)` zero. Typography: 10px label, 13px rows, 14px bold net.
+  - All 70 tests pass throughout. Production build succeeds (`CI=true`).
+
 ---
 
 ## What's Next
 
-*Last updated: 2026-03-16*
+*Last updated: 2026-03-18*
 
 Remaining priorities (in order):
 
 1. **Backend DB migration** — move remaining FPL-proxied endpoints to a database (like pricing already is). Would eliminate FPL rate-limiting at the root.
 2. **Player headshots in profile modal** — FPL provides `player.photo` filename; fetch from `https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png`.
-3. **Analytics integration** — add PostHog or Plausible for anonymous visitor tracking (requires account signup + project ID).
-4. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
-5. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
+3. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
+4. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
