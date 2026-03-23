@@ -2,6 +2,20 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
+// AuthContext is mocked entirely so Firebase is never initialised in tests.
+jest.mock('./contexts/AuthContext', () => ({
+  AuthProvider: ({ children }) => children,
+  useAuth: () => ({
+    user: null,
+    loading: false,
+    isPro: false,
+    signInWithGoogle: jest.fn(),
+    signInWithEmail: jest.fn(),
+    signUp: jest.fn(),
+    signOut: jest.fn(),
+  }),
+}));
+
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
