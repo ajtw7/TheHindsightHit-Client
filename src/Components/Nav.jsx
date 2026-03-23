@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, ChevronDown, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import AuthModal from '../components/AuthModal';
+import AuthModal from './AuthModal';
 
 const linkClass = ({ isActive }) =>
   `text-sm font-medium transition-colors py-2 block ${
