@@ -230,7 +230,7 @@ function App() {
         }}
       >
         <div className="App">
-          {mgrId && <Header mgrId={mgrId} onSwitchTeam={handleSwitchTeam} />}
+          <Header mgrId={mgrId} onSwitchTeam={handleSwitchTeam} />
           {mgrId && isOffSeason && (
             <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm text-center px-4 py-2">
               No active gameweek — showing most recent data

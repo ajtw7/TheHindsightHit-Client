@@ -255,6 +255,14 @@ At the end of every session, before pushing, Claude must update this file:
   - **Transfer impact breakdown (FIX 3):** Replaced single-badge impact display in `Transfers.jsx` with a full panel showing playerIn points since transfer, playerOut points since transfer, and net impact with ▲/▼ arrow. Colours: `#00E87A` positive, `#ef4444` negative, `rgba(255,255,255,0.5)` zero. Typography: 10px label, 13px rows, 14px bold net.
   - All 70 tests pass throughout. Production build succeeds (`CI=true`).
 
+- **2026-03-22 — Session 11 (claude/firebase-auth-client):**
+  - **Firebase Auth integration:** added `firebase` npm dependency; `src/config/firebase.js` (SDK init from env vars, guards against re-init); `src/contexts/AuthContext.js` (AuthProvider + `useAuth` hook exposing `user`, `loading`, `isPro`, `signInWithGoogle`, `signInWithEmail`, `signUp`, `signOut`); `src/services/useUserProfile.js` (fetches `GET /api/user/me` with Bearer token after sign-in, returns `isPro` boolean); `src/components/AuthModal.jsx` (dark-themed modal with prominent Google sign-in + email/password form, sign-in/sign-up toggle, friendly error messages).
+  - **`index.js`:** wrapped app with `<AuthProvider>` inside `BrowserRouter`.
+  - **`App.js`:** Header now always rendered (not conditional on mgrId) so Sign In is accessible from the landing page.
+  - **`Nav.jsx`:** Sign In button (when logged out) opens AuthModal; Account dropdown (when logged in) shows email + Sign Out; both desktop and mobile drawer handled.
+  - **`.env.example`:** added all 6 `REACT_APP_FIREBASE_*` vars with real project values.
+  - **`App.test.js`:** mocked `AuthContext` module so Firebase is never initialised in tests. All 74 tests pass.
+
 - **2026-03-18 — Polish fixes (claude/add-logo-to-header):**
   - **Transfer impact label:** header in the impact breakdown panel now reads "POINTS SINCE GW N" (e.g. "POINTS SINCE GW 29") using `transfer.impact.gameweek` with `transfer.event` as fallback.
   - **Stale mgrId cleanup:** `initCache()` now calls `localStorage.removeItem('mgrId')` on every startup, purging the plain key written by old code that used localStorage as source of truth. Prevents ghost API calls on cold load after upgrading from a cached old build.
@@ -265,10 +273,13 @@ At the end of every session, before pushing, Claude must update this file:
 
 ## What's Next
 
-*Last updated: 2026-03-18*
+*Last updated: 2026-03-22*
 
 Remaining priorities (in order):
 
-1. **Backend DB migration** — move remaining FPL-proxied endpoints to a database (like pricing already is). Would eliminate FPL rate-limiting at the root.
-2. **User accounts** — Firebase Auth or Supabase for multi-device sync, saved preferences (requires project setup).
-3. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
+1. **Add Firebase env vars to Netlify dashboard** — add all 6 `REACT_APP_FIREBASE_*` vars (values in `.env.example`) to Netlify → Site settings → Environment variables, then trigger a redeploy.
+2. **Enable Google sign-in in Firebase console** — Authentication → Sign-in method → Google → Enable.
+3. **Enable Email/Password sign-in in Firebase console** — Authentication → Sign-in method → Email/Password → Enable.
+4. **Add authorised domain for Netlify** — Firebase console → Authentication → Settings → Authorised domains → add `thehindsighthit.netlify.app`.
+5. **Backend DB migration** — move remaining FPL-proxied endpoints to a database (like pricing already is). Would eliminate FPL rate-limiting at the root.
+6. **TypeScript migration** — start with `src/utils/findAlternatives.js` and the service hooks.
